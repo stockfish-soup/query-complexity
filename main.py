@@ -2,6 +2,7 @@ import itertools
 from tensor1 import tensor1
 from tensor2t import tensor2
 from tensor2eps import tensor2eps
+from adversary import adversary_primal, adversary_dual
 import numpy as np
 import cvxpy as cp
 
@@ -39,13 +40,27 @@ def f_deutsch_jozsa(m: int):
 
 ## First method examples ##
 
-m = 3
+m = 2
 n = 2 ** m
+
+n = 6
 
 t = 1
 
+f_values = f_or(n)
+
+value = adversary_primal(n,f_values,verbose = True)
+
+
+print(value[0])
+
+
+
+
+"""
+
 f_values = f_deutsch_jozsa(m)
-#f_values = f_or(n)
+f_values = f_or(n)
 
 
 prob, vars_ = tensor1(
@@ -123,7 +138,8 @@ print("A constraints:", out["A_constraints"])
 print(out["size_metrics"])
 
 
-"""
+
+
 
 ## Second method examples ##
 
