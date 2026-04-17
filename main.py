@@ -1,7 +1,6 @@
 import itertools
 from tensor1 import tensor1
-from tensor2t import tensor2
-from tensor2eps import tensor2eps
+from tensor2 import tensor2t, tensor2eps
 from adversary import adversary_primal, adversary_dual, adversary_primal_orbit_reduced, adversary_primal_step2_symmetric, adversary_primal_step_one_half_symmetric
 import numpy as np
 import cvxpy as cp
