@@ -2,7 +2,7 @@ import itertools
 from tensor1 import tensor1
 from tensor2t import tensor2
 from tensor2eps import tensor2eps
-from adversary import adversary_primal, adversary_dual
+from adversary import adversary_primal, adversary_dual, adversary_primal_orbit_reduced, adversary_primal_step2_symmetric, adversary_primal_step_one_half_symmetric
 import numpy as np
 import cvxpy as cp
 
@@ -11,6 +11,12 @@ def f_or(n):
     return {
         x: (1.0 if any(xi == 1 for xi in x) else -1.0)
         for x in itertools.product([-1, 1], repeat=n)
+    }
+
+def f_or01(n: int) -> dict:
+    return {
+        x: int(any(x))
+        for x in itertools.product([0, 1], repeat=n)
     }
 
 
@@ -43,18 +49,23 @@ def f_deutsch_jozsa(m: int):
 m = 2
 n = 2 ** m
 
-n = 6
+n = 9
 
 t = 1
 
 f_values = f_or(n)
 
-value = adversary_primal(n,f_values,verbose = True)
+#value = adversary_primal(n,f_values,verbose = True)
 
 
-print(value[0])
+#print(value[0])
 
 
+#value = adversary_primal_orbit_reduced(n,f_values,verbose = True)
+
+value = adversary_primal_step2_symmetric(n,f_values,verbose = True)
+
+#value = adversary_primal_step_one_half_symmetric(n,f_values,verbose = True)
 
 
 """

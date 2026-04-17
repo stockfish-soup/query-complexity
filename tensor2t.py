@@ -7,9 +7,7 @@ import scipy.sparse as sp
 import cvxpy as cp
 
 
-# ============================
 # Basic tuple/index utilities
-# ============================
 
 def tuples_of_len(m: int, s: int) -> List[Tuple[int, ...]]:
     """All tuples in [m]^s, using 0-based indexing."""
@@ -30,9 +28,7 @@ def monomial_features(z: np.ndarray, tuple_arr: np.ndarray) -> np.ndarray:
     return np.prod(z[tuple_arr], axis=1)
 
 
-# ====================================================
 # Sparse symmetric matrices for equality operator A_s
-# ====================================================
 
 def _add_sym_entry(rows, cols, data, i: int, j: int, coeff: float) -> None:
     """
@@ -184,9 +180,7 @@ def build_paper_structure(n: int, degree: int, split: Optional[int] = None):
     }
 
 
-# ============================================================
 # Static matrix builders
-# ============================================================
 
 def C_s_of_M(M: cp.Expression, Na: int, Nb: int) -> cp.Expression:
     """
@@ -214,9 +208,7 @@ def A_star_of_y(y: Optional[cp.Variable], A_consts: List[cp.Constant], N: int) -
     return expr
 
 
-# ============================================================
 # Precompute approximation features
-# ============================================================
 
 def precompute_split_features(
     n: int,
@@ -244,9 +236,7 @@ def precompute_split_features(
     return features
 
 
-# ===
 # SDP
-# ===
 
 def paper_cbdeg_problem(
     n: int,
@@ -328,9 +318,7 @@ def paper_cbdeg_problem(
     }
 
 
-# ========================
 # Query complexity search
-# ========================
 
 def query_upper_bound_from_degree(degree: int) -> int:
     """

@@ -24,9 +24,7 @@ def monomial_features(z: np.ndarray, tuple_arr: np.ndarray) -> np.ndarray:
     return np.prod(z[tuple_arr], axis=1)
 
 
-# =====================================================
 # Sparse symmetric matrices for equality operator A_s
-# =====================================================
 
 def _add_sym_entry(rows, cols, data, i: int, j: int, coeff: float) -> None:
     """
@@ -62,9 +60,7 @@ def make_entry_diff_matrix(
     return sp.csr_matrix((data, (rows, cols)), shape=(N, N))
 
 
-# =================================================
 # Structure builder for the reduced-size paper SDP
-# ==================================================
 
 def build_paper_structure(n: int, degree: int, split: Optional[int] = None):
     """
@@ -165,9 +161,7 @@ def build_paper_structure(n: int, degree: int, split: Optional[int] = None):
     }
 
 
-# ============================================================
 # Static matrix builders
-# ============================================================
 
 def C_s_of_M(M: cp.Expression, Na: int, Nb: int) -> cp.Expression:
     """
@@ -195,9 +189,8 @@ def A_star_of_y(y: Optional[cp.Variable], A_consts: List[cp.Constant], N: int) -
     return expr
 
 
-# ============================================================
 # Precompute approximation features
-# ============================================================
+
 
 def precompute_split_features(
     n: int,
@@ -225,9 +218,7 @@ def precompute_split_features(
     return features
 
 
-# ============================================================
-# Paper-style SDP for fixed QUERY count t
-# ============================================================
+# SDP for fixed QUERY count t
 
 def problem_paper_fixed_t(
     n: int,
@@ -237,7 +228,6 @@ def problem_paper_fixed_t(
     structure=None,
 ):
     """
-    Paper-style SDP rewritten in the same optimization style as the first code:
     fix the query count t, set degree d = 2t, and minimize epsilon.
 
     Parameters
@@ -319,9 +309,8 @@ def problem_paper_fixed_t(
     }
 
 
-# ========
 # Examples
-# ========
+
 
 def f_or(n: int) -> Dict[Tuple[int, ...], float]:
     """
@@ -368,7 +357,7 @@ def tensor2eps(
     solver_opts: Optional[dict] = None,
 ):
     """
-    Solve the paper-style SDP for fixed query count t and return the optimal epsilon.
+    Solve the SDP for fixed query count t and return the optimal epsilon.
     """
     if solver_opts is None:
         solver_opts = {}
