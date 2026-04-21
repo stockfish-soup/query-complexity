@@ -45,14 +45,18 @@ def f_deutsch_jozsa(m: int):
 
 ## First method examples ##
 
-m = 2
+m = 3
 n = 2 ** m
 
-n = 9
+n = 10
 
 t = 1
 
 f_values = f_or(n)
+
+#f_values = f_deutsch_jozsa(m)
+
+
 
 #value = adversary_primal(n,f_values,verbose = True)
 
@@ -60,9 +64,9 @@ f_values = f_or(n)
 #print(value[0])
 
 
-#value = adversary_primal_orbit_reduced(n,f_values,verbose = True)
+value = adversary_primal_orbit_reduced(n,f_values,verbose = True)
 
-value = adversary_primal_step2_symmetric(n,f_values,verbose = True)
+#value = adversary_primal_step2_symmetric(n,f_values,verbose = True)
 
 #value = adversary_primal_step_one_half_symmetric(n,f_values,verbose = True)
 

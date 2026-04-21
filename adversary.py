@@ -3,6 +3,7 @@ import numpy as np
 import cvxpy as cp
 import math
 from collections import defaultdict
+import datetime
 
 
 #### PRIMAL ####
@@ -278,6 +279,8 @@ def adversary_primal_orbit_reduced(
     Gamma = [[None for _ in range(m)] for _ in range(m)]
     beta_diag = [None for _ in range(m)]
 
+    first_time = datetime.datetime.now()
+
     for i, x in enumerate(domain):
         a = int(hamming_weight(x))
         beta_diag[i] = beta[a]
@@ -285,6 +288,10 @@ def adversary_primal_orbit_reduced(
             b = int(hamming_weight(y))
             t = int(intersection_weight(x, y))
             Gamma[i][j] = gamma[(a, b, t)]
+
+    later_time = datetime.datetime.now()
+
+    print("time spent in the domain :",later_time - first_time)
 
     Gamma_expr = cp.bmat(Gamma)
     beta_diag_expr = cp.diag(cp.hstack(beta_diag))
@@ -820,8 +827,16 @@ def numerical_block_diagonalize_algebra(B, eig_tol=1e-9, zero_tol=1e-8, seed=0):
     coeffs = rng.standard_normal(len(B))
     H = sum(c * Br for c, Br in zip(coeffs, B))
 
+    first_time = datetime.datetime.now()
+
     # Diagonalize
     evals, U = np.linalg.eigh(H)
+
+    later_time = datetime.datetime.now()
+
+    print("[BLOCK DIAGONALIZATION] Time spent diagonalizing the commutative subalgebra:",later_time - first_time)
+
+    first_time = datetime.datetime.now()
 
     # Cluster nearly equal eigenvalues
     clusters = []
@@ -836,6 +851,12 @@ def numerical_block_diagonalize_algebra(B, eig_tol=1e-9, zero_tol=1e-8, seed=0):
 
     # Transform basis into eigenbasis of H
     B_tilde = [U.T @ Br @ U for Br in B]
+
+    later_time = datetime.datetime.now()
+
+    print("[BLOCK DIAGONALIZATION] Time spent clustering the eigenvalues:",later_time - first_time)
+
+    first_time = datetime.datetime.now()
 
     # Graph on clusters: two clusters are connected if some basis element
     # has a non-negligible block between them
@@ -876,6 +897,12 @@ def numerical_block_diagonalize_algebra(B, eig_tol=1e-9, zero_tol=1e-8, seed=0):
                     stack.append(w)
         components.append(sorted(comp))
 
+    later_time = datetime.datetime.now()
+
+    print("[BLOCK DIAGONALIZATION] Time spent finding building the equivalence relation:",later_time - first_time)
+
+    first_time = datetime.datetime.now()
+
     # Reorder basis vectors to make blocks contiguous
     perm = []
     block_sizes = []
@@ -888,6 +915,12 @@ def numerical_block_diagonalize_algebra(B, eig_tol=1e-9, zero_tol=1e-8, seed=0):
 
     P = np.eye(n)[:, perm]
     Q = U @ P
+
+    later_time = datetime.datetime.now()
+
+    print("[BLOCK DIAGONALIZATION] Time spent reordering:",later_time - first_time)
+
+    first_time = datetime.datetime.now()
 
     B_final = [Q.T @ Br @ Q for Br in B]
 
@@ -905,6 +938,10 @@ def numerical_block_diagonalize_algebra(B, eig_tol=1e-9, zero_tol=1e-8, seed=0):
         for sl in block_slices:
             blocks_r.append(Br[sl, sl])
         B_blocks.append(blocks_r)
+
+    later_time = datetime.datetime.now()
+
+    print("[BLOCK DIAGONALIZATION] Time spent conjugating into block diagonal form:",later_time - first_time)
 
     return Q, block_slices, B_blocks
 
@@ -984,6 +1021,8 @@ def adversary_primal_step2_symmetric(
     # 4. Reduced gamma variables
     # Keep only unordered layer pairs with opposite outputs
     # ----------------------------------------------------------
+
+    first_time = datetime.datetime.now()
     gamma_keys = set()
     for x in domain:
         a = hamming_weight(x)
@@ -1004,11 +1043,24 @@ def adversary_primal_step2_symmetric(
         aa, bb = min(a, b), max(a, b)
         key = (aa, bb, t)
         return gamma[key] if key in gamma else 0.0
+    
+    later_time = datetime.datetime.now()
+
+    print("time spent in the domain:",later_time - first_time)
 
     # ----------------------------------------------------------
     # 5. Build Hermitian H-orbit basis and block diagonalize
     # ----------------------------------------------------------
+
+    first_time = datetime.datetime.now()
+
     hermitian_keys, B = build_H_hermitian_orbit_basis(domain)
+
+    later_time = datetime.datetime.now()
+
+    print("time spent orbit reducing:",later_time - first_time)
+
+    first_time = datetime.datetime.now()
 
     Q, block_slices, B_blocks = numerical_block_diagonalize_algebra(
         B,
@@ -1016,6 +1068,10 @@ def adversary_primal_step2_symmetric(
         zero_tol=zero_tol,
         seed=seed,
     )
+
+    later_time = datetime.datetime.now()
+
+    print("time spent block-diagonalizing:",later_time - first_time)
 
     # ----------------------------------------------------------
     # 6. Express M_1 = sum_u z_u B_u
