@@ -849,10 +849,10 @@ def numerical_block_diagonalize_algebra(B, eig_tol=1e-9, zero_tol=1e-8, seed=0):
             current = [i]
     clusters.append(current)
 
+    later_time = datetime.datetime.now()
+
     # Transform basis into eigenbasis of H
     B_tilde = [U.T @ Br @ U for Br in B]
-
-    later_time = datetime.datetime.now()
 
     print("[BLOCK DIAGONALIZATION] Time spent clustering the eigenvalues:",later_time - first_time)
 
@@ -1155,3 +1155,414 @@ def adversary_primal_step2_symmetric(
         "domain_01": domain,
     }
 
+import cvxpy as cp
+from math import comb
+from collections import defaultdict
+
+
+# ============================================================
+# Basic helpers
+# ============================================================
+
+def normalize_input_bits(x):
+    """
+    Convert input to a 0/1 tuple.
+    Accepts:
+      - tuple/list in {0,1}
+      - tuple/list in {-1,1}
+      - string like '0101'
+    """
+    if isinstance(x, str):
+        bits = tuple(int(c) for c in x)
+        if not set(bits).issubset({0, 1}):
+            raise ValueError(f"String input {x} is not binary.")
+        return bits
+
+    x = tuple(int(v) for v in x)
+    vals = set(x)
+    if vals.issubset({0, 1}):
+        return x
+    if vals.issubset({-1, 1}):
+        return tuple(1 if v == 1 else 0 for v in x)
+
+    raise ValueError(f"Input {x} is not in {{0,1}}^n or {{-1,1}}^n.")
+
+
+def normalize_output(v):
+    return 0 if v in (-1, 0, False) else 1
+
+
+def hamming_weight(x):
+    return sum(1 for bit in x if int(bit) == 1)
+
+
+def layer_sizes_full(n, allowed_layers):
+    return {k: comb(n, k) for k in allowed_layers}
+
+
+# ============================================================
+# Full S_n pair-orbit count:
+# number of ordered pairs (x,y) with |x|=a, |y|=b, |x∩y|=t
+# ============================================================
+
+def num_pairs_in_orbit(n, a, b, t):
+    if not (0 <= a <= n and 0 <= b <= n):
+        return 0
+    if not (max(0, a + b - n) <= t <= min(a, b)):
+        return 0
+    return comb(n, a) * comb(a, t) * comb(n - a, b - t)
+
+
+# ============================================================
+# H = Stab(1) ordered pair orbit key:
+# (x1, y1, |x|, |y|, |x∩y|)
+# ============================================================
+
+def valid_H_orbit_key(n, key):
+    x1, y1, a, b, t = key
+    if x1 not in (0, 1) or y1 not in (0, 1):
+        return False
+    if not (0 <= a <= n and 0 <= b <= n):
+        return False
+    xy1 = x1 * y1
+    t_rest = t - xy1
+    a_rest = a - x1
+    b_rest = b - y1
+    if a_rest < 0 or b_rest < 0 or t_rest < 0:
+        return False
+    if not (max(0, a_rest + b_rest - (n - 1)) <= t_rest <= min(a_rest, b_rest)):
+        return False
+    return True
+
+
+def num_H_pairs_in_orbit(n, key):
+    """
+    Number of ordered pairs (x,y) in {0,1}^n x {0,1}^n
+    with given H-orbit key (x1,y1,a,b,t).
+    """
+    x1, y1, a, b, t = key
+    if not valid_H_orbit_key(n, key):
+        return 0
+
+    xy1 = x1 * y1
+    t_rest = t - xy1
+    a_rest = a - x1
+    b_rest = b - y1
+
+    return comb(n - 1, a_rest) * comb(a_rest, t_rest) * comb((n - 1) - a_rest, b_rest - t_rest)
+
+
+# ============================================================
+# Enumerate all H-orbit keys present in a symmetric promise domain
+# Domain = union of full Hamming layers in allowed_layers
+# ============================================================
+
+def enumerate_H_orbit_keys(n, allowed_layers):
+    keys = []
+    for x1 in (0, 1):
+        for y1 in (0, 1):
+            for a in allowed_layers:
+                for b in allowed_layers:
+                    for t in range(max(0, a + b - n), min(a, b) + 1):
+                        key = (x1, y1, a, b, t)
+                        if num_H_pairs_in_orbit(n, key) > 0:
+                            keys.append(key)
+    return sorted(keys)
+
+
+# ============================================================
+# Combinatorial structural constants for the H-orbit basis
+#
+# If r=(x1,z1,a,c,u), s=(z1,y1,c,b,v), t=(x1,y1,a,b,w),
+# then p_{rs}^t counts the number of intermediate z consistent with both orbit
+# conditions relative to a fixed pair (x,y) in orbit t.
+# ============================================================
+
+def structural_constant_H(n, r, s, tkey):
+    x1r, z1r, a_r, c_r, u_r = r
+    z1s, y1s, c_s, b_s, v_s = s
+    x1t, y1t, a_t, b_t, w_t = tkey
+
+    # compatibility of endpoints and middle layer
+    if x1r != x1t or y1s != y1t:
+        return 0
+    if z1r != z1s:
+        return 0
+    if a_r != a_t or b_s != b_t or c_r != c_s:
+        return 0
+
+    x1, y1, z1 = x1t, y1t, z1r
+    a, b, c = a_t, b_t, c_r
+    u, v, w = u_r, v_s, w_t
+
+    # counts on coordinates 2..n for fixed (x,y) in orbit tkey
+    n11 = w - x1 * y1
+    n10 = (a - x1) - n11
+    n01 = (b - y1) - n11
+    n00 = (n - 1) - n11 - n10 - n01
+
+    if min(n11, n10, n01, n00) < 0:
+        return 0
+
+    # remaining overlaps after removing coordinate 1
+    u_rem = u - x1 * z1
+    v_rem = v - z1 * y1
+    c_rem = c - z1
+
+    if min(u_rem, v_rem, c_rem) < 0:
+        return 0
+
+    total = 0
+
+    # alpha = number of (1,1) positions among coords 2..n where z=1
+    alpha_min = max(
+        0,
+        u_rem - n10,
+        v_rem - n01,
+        u_rem + v_rem - c_rem
+    )
+    alpha_max = min(
+        n11,
+        u_rem,
+        v_rem,
+        n00 + u_rem + v_rem - c_rem
+    )
+
+    for alpha in range(alpha_min, alpha_max + 1):
+        a11 = alpha
+        a10 = u_rem - alpha
+        a01 = v_rem - alpha
+        a00 = c_rem - u_rem - v_rem + alpha
+
+        if min(a11, a10, a01, a00) < 0:
+            continue
+        if a11 > n11 or a10 > n10 or a01 > n01 or a00 > n00:
+            continue
+
+        total += (
+            comb(n11, a11)
+            * comb(n10, a10)
+            * comb(n01, a01)
+            * comb(n00, a00)
+        )
+
+    return total
+
+
+# ============================================================
+# Build regular representation combinatorially
+# ============================================================
+
+def build_regular_representation_H(n, allowed_layers):
+    """
+    Returns:
+      orbit_keys : ordered H-orbit keys
+      orbit_sizes : list of ||C_r||^2 = size of orbit
+      L_mats : list of regular-representation matrices L(C_r)
+    """
+    orbit_keys = enumerate_H_orbit_keys(n, allowed_layers)
+    M = len(orbit_keys)
+
+    orbit_sizes = [num_H_pairs_in_orbit(n, key) for key in orbit_keys]
+    norms = [size ** 0.5 for size in orbit_sizes]
+
+    first_time = datetime.datetime.now()
+
+    # structural constants p[r][s][t]
+    p = [[[0] * M for _ in range(M)] for __ in range(M)]
+    for r in range(M):
+        for s in range(M):
+            for t in range(M):
+                p[r][s][t] = structural_constant_H(n, orbit_keys[r], orbit_keys[s], orbit_keys[t])
+                print(r,s,t,p[r][s][t])
+
+    later_time = datetime.datetime.now()
+
+    print("[REGULAR REPRESENTATION] time spent computing the p's:",later_time - first_time)
+
+    first_time = datetime.datetime.now()
+
+    # regular representation matrices
+    L_mats = []
+    for r in range(M):
+        Lr = [[0.0] * M for _ in range(M)]
+        for s in range(M):
+            for t in range(M):
+                if norms[t] == 0:
+                    raise ValueError("Zero orbit norm encountered.")
+                Lr[s][t] = (norms[s] / norms[t]) * p[r][t][s]
+        L_mats.append(Lr)
+
+    later_time = datetime.datetime.now()
+
+    print("[REGULAR REPRESENTATION] time spent computing the representation matrices:",later_time - first_time)
+
+    return orbit_keys, orbit_sizes, L_mats
+
+
+# ============================================================
+# Step 1 1/2 SDP for symmetric promise functions
+# ============================================================
+
+def adversary_primal_step_one_half_combinatorial(
+    n,
+    f_values,
+    solver=None,
+    verbose=False,
+):
+    """
+    Combinatorial Step 1 1/2 implementation for the primal adversary SDP.
+
+    Assumptions:
+      - f is symmetric on its promise domain
+      - the promise domain is a union of full Hamming layers
+      - inputs may be in {0,1}^n or {-1,1}^n
+
+    Returns a dict with the SDP solution and precomputed algebra data.
+    """
+
+    # ----------------------------------------------------------
+    # 1. Normalize domain and verify symmetry-by-layer
+    # ----------------------------------------------------------
+    orig_keys = list(f_values.keys())
+    domain = [normalize_input_bits(x) for x in orig_keys]
+    values01 = [normalize_output(f_values[x]) for x in orig_keys]
+
+    if not domain:
+        raise ValueError("Empty domain.")
+
+    for x in domain:
+        if len(x) != n:
+            raise ValueError(f"Input {x} has length {len(x)} but expected {n}.")
+
+    layer_value = {}
+    layer_count_seen = defaultdict(int)
+
+    for x, fx in zip(domain, values01):
+        k = hamming_weight(x)
+        layer_count_seen[k] += 1
+        if k in layer_value and layer_value[k] != fx:
+            raise ValueError(f"Function is not symmetric on the given domain: layer {k} has both outputs.")
+        layer_value[k] = fx
+
+    allowed_layers = sorted(layer_value.keys())
+    full_layer_sizes = layer_sizes_full(n, allowed_layers)
+
+    # verify promise domain is union of full layers
+    for k in allowed_layers:
+        if layer_count_seen[k] != full_layer_sizes[k]:
+            raise ValueError(
+                f"Layer {k} is incomplete: saw {layer_count_seen[k]} points but full layer has {full_layer_sizes[k]}. "
+                "This combinatorial implementation assumes the promise domain is a union of full Hamming layers."
+            )
+
+    zero_layers = sorted(k for k, v in layer_value.items() if v == 0)
+    one_layers = sorted(k for k, v in layer_value.items() if v == 1)
+
+    if not zero_layers or not one_layers:
+        raise ValueError("The function must take both output values on the domain.")
+
+    # ----------------------------------------------------------
+    # 2. Reduced variables
+    # ----------------------------------------------------------
+    beta = {k: cp.Variable(nonneg=True, name=f"beta_{k}") for k in allowed_layers}
+
+    gamma_keys = []
+    for a in allowed_layers:
+        for b in allowed_layers:
+            if layer_value[a] == layer_value[b]:
+                continue
+            aa, bb = min(a, b), max(a, b)
+            for t in range(max(0, aa + bb - n), min(aa, bb) + 1):
+                key = (aa, bb, t)
+                if key not in gamma_keys:
+                    gamma_keys.append(key)
+    gamma_keys = sorted(gamma_keys)
+    gamma = {key: cp.Variable(name=f"gamma_{key[0]}_{key[1]}_{key[2]}") for key in gamma_keys}
+
+    def gamma_var(a, b, t):
+        aa, bb = min(a, b), max(a, b)
+        key = (aa, bb, t)
+        return gamma[key] if key in gamma else 0.0
+
+    # ----------------------------------------------------------
+    # 3. Precompute H-orbit algebra combinatorially
+    # ----------------------------------------------------------
+
+    first_time = datetime.datetime.now()
+
+    orbit_keys, orbit_sizes, L_mats = build_regular_representation_H(n, allowed_layers)
+    M = len(orbit_keys)
+
+    later_time = datetime.datetime.now()
+
+    print("time spent building the regular representation:",later_time - first_time)
+
+    # ----------------------------------------------------------
+    # 4. Express M_1 = diag(beta) - Gamma o Delta_1 in ordered H-orbit basis
+    #    M_1 = sum_r z_r C_r
+    # ----------------------------------------------------------
+    z = []
+    for key in orbit_keys:
+        x1, y1, a, b, t = key
+
+        # diagonal orbit iff x=y
+        is_diagonal_orbit = (x1 == y1) and (a == b == t)
+        diag_term = beta[a] if is_diagonal_orbit else 0.0
+
+        delta1 = 1 if x1 != y1 else 0
+        if layer_value[a] != layer_value[b] and delta1 == 1:
+            gamma_term = gamma_var(a, b, t)
+        else:
+            gamma_term = 0.0
+
+        z.append(diag_term - gamma_term)
+
+    # ----------------------------------------------------------
+    # 5. Constraints
+    # ----------------------------------------------------------
+    constraints = []
+
+    constraints.append(cp.sum([full_layer_sizes[k] * beta[k] for k in zero_layers]) == 0.5)
+    constraints.append(cp.sum([full_layer_sizes[k] * beta[k] for k in one_layers]) == 0.5)
+
+    # Step 1 1/2 PSD constraint
+    Mred = 0
+    for zr, Lr in zip(z, L_mats):
+        Mred += zr * cp.Constant(Lr)
+    constraints.append(Mred >> 0)
+
+    # ----------------------------------------------------------
+    # 6. Objective, combinatorially
+    #    sum_{x,y} Gamma[x,y]
+    # ----------------------------------------------------------
+    objective_expr = 0
+    for (a, b, t), var in gamma.items():
+        if a == b:
+            mult = num_pairs_in_orbit(n, a, b, t)
+            objective_expr += mult * var
+        else:
+            # because we stored only unordered (a,b), but objective is ordered over all pairs
+            mult = num_pairs_in_orbit(n, a, b, t) + num_pairs_in_orbit(n, b, a, t)
+            objective_expr += mult * var
+
+    problem = cp.Problem(cp.Maximize(objective_expr), constraints)
+
+    if solver is not None:
+        value = problem.solve(solver=solver, verbose=verbose)
+    else:
+        try:
+            value = problem.solve(solver=cp.MOSEK, verbose=verbose)
+        except Exception:
+            value = problem.solve(solver=cp.SCS, verbose=verbose, eps=1e-6)
+
+    return {
+        "value": value,
+        "status": problem.status,
+        "beta": {k: beta[k].value for k in beta},
+        "gamma": {k: gamma[k].value for k in gamma},
+        "orbit_keys_H": orbit_keys,
+        "orbit_sizes_H": orbit_sizes,
+        "regular_rep_size": M,
+        "allowed_layers": allowed_layers,
+    }
