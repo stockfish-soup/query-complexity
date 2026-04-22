@@ -1,7 +1,7 @@
 import itertools
 from tensor1 import tensor1
 from tensor2 import tensor2t, tensor2eps
-from adversary import adversary_primal, adversary_dual, adversary_primal_orbit_reduced, adversary_primal_step2_symmetric, adversary_primal_step_one_half_symmetric, adversary_primal_step_one_half_combinatorial
+from adversary import adversary_primal, adversary_dual, adversary_primal_orbit_reduced, adversary_primal_step2_symmetric, adversary_primal_step_one_half_symmetric,  adversary_primal_step_one_half_sparse, adversary_primal_step_one_half_sparse_blocks
 import numpy as np
 import cvxpy as cp
 
@@ -48,7 +48,7 @@ def f_deutsch_jozsa(m: int):
 m = 2
 n = 2 ** m
 
-n = 7
+n = 21
 
 t = 1
 
@@ -70,7 +70,11 @@ f_values = f_or(n)
 
 #value = adversary_primal_step_one_half_symmetric(n,f_values,verbose = True)
 
-value = adversary_primal_step_one_half_combinatorial(n,f_values,verbose = True)
+#value = adversary_primal_step_one_half_sparse(n,f_values,verbose = True)
+
+value = adversary_primal_step_one_half_sparse_blocks(n,f_values,verbose = True)
+
+
 
 
 """
