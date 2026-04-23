@@ -116,7 +116,7 @@ subject to:
 X_j \succeq 0 \quad \forall j \in [n]
 ```
 
-where ( X_1, \ldots, X_n \in \mathbb{R}^{\mathcal{D} \times \mathcal{D}} ) are positive semidefinite matrices.
+where $X_1, \ldots, X_n \in \mathbb{R}^{\mathcal{D} \times \mathcal{D}}$ are positive semidefinite matrices.
 
 
 
