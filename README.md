@@ -27,7 +27,7 @@ File: `tensor2.py`
 
 File: `adversary.py`
 
-- section 6.2.4 and 6.2.5 : https://ir.cwi.nl/pub/32884/32884D.pdl
+- section 6.2.4 and 6.2.5 : https://ir.cwi.nl/pub/32884/32884D.pdf
 
 #### - Symmetry reduced primal
 
