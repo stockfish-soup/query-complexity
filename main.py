@@ -2,8 +2,11 @@ import itertools
 from tensor1 import tensor1
 from tensor2 import tensor2t, tensor2eps
 from adversary import adversary_primal, adversary_dual, adversary_primal_orbit_reduced, adversary_primal_step2_symmetric, adversary_primal_step_one_half_symmetric,  adversary_primal_step_one_half_sparse, adversary_primal_step_one_half_sparse_blocks
+from adversary_symmetry_reduced import adversary_symmetry_reduced
 import numpy as np
 import cvxpy as cp
+from matplotlib import pyplot as plt
+import datetime
 
 
 def f_or(n):
@@ -48,7 +51,7 @@ def f_deutsch_jozsa(m: int):
 m = 2
 n = 2 ** m
 
-n = 21
+n = 19
 
 t = 1
 
@@ -72,8 +75,62 @@ f_values = f_or(n)
 
 #value = adversary_primal_step_one_half_sparse(n,f_values,verbose = True)
 
-value = adversary_primal_step_one_half_sparse_blocks(n,f_values,verbose = True)
+#value = adversary_primal_step_one_half_sparse_blocks(n,f_values,verbose = True)
 
+#print(value)
+
+
+"""
+
+### TEST FOR 1....N ###
+
+N = 20
+
+L = []
+
+
+
+for n in range(1,N+1):
+
+    first_time = datetime.datetime.now()
+
+    f_values = f_or(n)
+
+    value = adversary_primal_step_one_half_sparse_blocks(n,f_values,verbose = False)
+
+    L.append(value["value"])
+
+    later_time = datetime.datetime.now()
+
+    print("Time spent solving for N =",n,":",later_time - first_time)
+
+    print("Optimal value:",value["value"])
+
+
+
+plt.plot(L)
+
+plt.show()
+"""
+
+n = 10
+
+f_values = f_or(n)
+
+# Solve OR_3
+res = adversary_symmetry_reduced(
+    n=n,
+    f_values=f_values,
+    verbose=False,
+)
+
+print("status:", res["status"])
+print("value:", res["value"])
+print("regular representation size:", res["regular_rep_size"])
+print("num blocks:", res["num_blocks"])
+print("block sizes:", res["block_sizes"])
+print("beta:", res["beta"])
+print("gamma:", res["gamma"])
 
 
 

@@ -2213,6 +2213,7 @@ def adversary_primal_step_one_half_sparse_blocks(
         except Exception:
             value = problem.solve(solver=cp.SCS, verbose=verbose, eps=1e-6)
 
+    
     return {
         "value": value,
         "status": problem.status,
