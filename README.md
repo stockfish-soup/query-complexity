@@ -60,7 +60,7 @@ For a better implementation, we used the following reformulation (as shown in Ar
 
 
 
-Let ( f : \mathcal{D} \to {0,1} ), with ( \mathcal{D} \subseteq {0,1}^n ). Then ( \mathrm{ADV}^{\pm}(f) ) is the optimal value of:
+Let $f : \mathcal{D} \to {0,1}$, with $\mathcal{D} \subseteq {0,1}^n$. Then $\mathrm{ADV}^{\pm}(f)$ is the optimal value of:
 
 ```math
 \max \sum_{x,y \in \mathcal{D}} \Gamma[x,y]
@@ -100,7 +100,7 @@ Outputs:
 
 We use the version shown in Arjan's thesis, Section 6.2.5.
 
-Let ( f : \mathcal{D} \to {0,1} ), with ( \mathcal{D} \subseteq {0,1}^n ). Then ( \mathrm{ADV}^{\pm}(f) ) is the optimal value of:
+Let $f : \mathcal{D} \to {0,1}$, with $\mathcal{D} \subseteq {0,1}^n$. Then $\mathrm{ADV}^{\pm}(f)$ is the optimal value of:
 
 ```math
 \min \max_{x \in \mathcal{D}} \sum_{j=1}^n X_j[x,x]
