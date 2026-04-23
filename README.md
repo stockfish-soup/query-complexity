@@ -59,15 +59,32 @@ Outputs:
 For a better implementation, we used the following reformulation (as shown in Arjan's thesis, Section 6.2.4).
 
 
-Let $f : \mathcal{D} \to \{0,1\}$, with $\mathcal{D} \subseteq \{0,1\}^n$. Then, $\mathrm{ADV}^{\pm}(f)$ is the optimal value of the following SDP:
 
-$\begin{align}
-\max \quad & \sum_{x,y \in \mathcal{D}} \Gamma[x,y], \tag{6.2.1a} \\
-\text{s.t.} \quad & \text{diag}(\beta) - \Gamma \circ \Delta_j \succeq 0, \quad \forall j \in [n], \tag{6.2.1b} \\
-& \Gamma[x,y] = 0, \quad \forall x,y \in \mathcal{D} \text{ such that } f(x) = f(y), \tag{6.2.1c} \\
-& \sum_{x \in f^{-1}(1)} \beta[x] = \tfrac{1}{2}, \tag{6.2.1d} \\
-& \sum_{y \in f^{-1}(0)} \beta[y] = \tfrac{1}{2}. \tag{6.2.1e}
-\end{align}$
+Let ( f : \mathcal{D} \to {0,1} ), with ( \mathcal{D} \subseteq {0,1}^n ). Then ( \mathrm{ADV}^{\pm}(f) ) is the optimal value of:
+
+```math
+\max \sum_{x,y \in \mathcal{D}} \Gamma[x,y]
+```
+
+subject to:
+
+```math
+\operatorname{diag}(\beta) - \Gamma \circ \Delta_j \succeq 0 \quad \forall j \in [n]
+```
+
+```math
+\Gamma[x,y] = 0 \quad \forall x,y \in \mathcal{D} \text{ with } f(x)=f(y)
+```
+
+```math
+\sum_{x \in f^{-1}(1)} \beta[x] = \tfrac{1}{2}
+```
+
+```math
+\sum_{y \in f^{-1}(0)} \beta[y] = \tfrac{1}{2}
+```
+
+
 
 #### - Dual: `adversary_dual()`
 
@@ -83,22 +100,24 @@ Outputs:
 
 We use the version shown in Arjan's thesis, Section 6.2.5.
 
+Let ( f : \mathcal{D} \to {0,1} ), with ( \mathcal{D} \subseteq {0,1}^n ). Then ( \mathrm{ADV}^{\pm}(f) ) is the optimal value of:
 
-Let $f : \mathcal{D} \to \{0,1\}$, with $\mathcal{D} \subseteq \{0,1\}^n$. Then, $\mathrm{ADV}^{\pm}(f)$ is the optimal value of the following SDP:
-$\begin{align}
-\min \quad & \max_{x \in \mathcal{D}} \sum_{j=1}^n X_j[x,x], \tag{6.2.4a} \\
-\text{s.t.} \quad 
-& \sum_{\substack{j=1 \\ x_j \neq y_j}}^n X_j[x,y] = 1, 
-\quad \forall x,y \in \mathcal{D},\ f(x) \neq f(y), \tag{6.2.4b} \\
-& X_j \succeq 0, \quad \forall j \in [n], \tag{6.2.4c}
-\end{align}$
-where the optimization ranges over all positive semidefinite matrices 
-$X_1, \ldots, X_n \in \mathbb{R}^{\mathcal{D} \times \mathcal{D}}$.
+```math
+\min \max_{x \in \mathcal{D}} \sum_{j=1}^n X_j[x,x]
+```
+
+subject to:
+
+```math
+\sum_{\substack{j=1 \\ x_j \neq y_j}}^n X_j[x,y] = 1 \quad \forall x,y \in \mathcal{D},\ f(x) \neq f(y)
+```
+
+```math
+X_j \succeq 0 \quad \forall j \in [n]
+```
+
+where ( X_1, \ldots, X_n \in \mathbb{R}^{\mathcal{D} \times \mathcal{D}} ) are positive semidefinite matrices.
 
 
 
 
-
-
-
-Implementation of step 1/2:
