@@ -69,7 +69,7 @@ Let ( f : \mathcal{D} \to {0,1} ), with ( \mathcal{D} \subseteq {0,1}^n ). Then 
 subject to:
 
 ```math
-\operatorname{diag}(\beta) - \Gamma \circ \Delta_j \succeq 0 \quad \forall j \in [n]
+\text{diag}(\beta) - \Gamma \circ \Delta_j \succeq 0 \quad \forall j \in [n]
 ```
 
 ```math
