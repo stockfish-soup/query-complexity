@@ -60,7 +60,7 @@ For a better implementation, we used the following reformulation (as shown in Ar
 
 
 Let $f : \mathcal{D} \to \{0,1\}$, with $\mathcal{D} \subseteq \{0,1\}^n$. Then, $\mathrm{ADV}^{\pm}(f)$ is the optimal value of the following SDP:
-$$
+$
 \begin{align}
 \max \quad & \sum_{x,y \in \mathcal{D}} \Gamma[x,y], \tag{6.2.1a} \\
 \text{s.t.} \quad & \text{diag}(\beta) - \Gamma \circ \Delta_j \succeq 0, \quad \forall j \in [n], \tag{6.2.1b} \\
@@ -68,7 +68,7 @@ $$
 & \sum_{x \in f^{-1}(1)} \beta[x] = \tfrac{1}{2}, \tag{6.2.1d} \\
 & \sum_{y \in f^{-1}(0)} \beta[y] = \tfrac{1}{2}. \tag{6.2.1e}
 \end{align}
-$$
+$
 
 #### - Dual: `adversary_dual()`
 
@@ -86,7 +86,7 @@ We use the version shown in Arjan's thesis, Section 6.2.5.
 
 
 Let $f : \mathcal{D} \to \{0,1\}$, with $\mathcal{D} \subseteq \{0,1\}^n$. Then, $\mathrm{ADV}^{\pm}(f)$ is the optimal value of the following SDP:
-$$
+$
 \begin{align}
 \min \quad & \max_{x \in \mathcal{D}} \sum_{j=1}^n X_j[x,x], \tag{6.2.4a} \\
 \text{s.t.} \quad 
@@ -96,7 +96,7 @@ $$
 \end{align}
 where the optimization ranges over all positive semidefinite matrices 
 $X_1, \ldots, X_n \in \mathbb{R}^{\mathcal{D} \times \mathcal{D}}$.
-$$
+$
 
 
 
