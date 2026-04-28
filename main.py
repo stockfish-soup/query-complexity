@@ -3,7 +3,7 @@ from tensor1 import tensor1
 from tensor2 import tensor2t, tensor2eps
 from adversary import adversary_primal, adversary_dual, adversary_primal_orbit_reduced, adversary_primal_step2_symmetric, adversary_primal_step_one_half_symmetric,  adversary_primal_step_one_half_sparse, adversary_primal_step_one_half_sparse_blocks
 from adversary_symmetry_reduced import adversary_symmetry_reduced, adversary_primal_step2_terwilliger_from_f_values
-from adversary_terwilliger import solve_symmetric_adversary, OR_layers
+from adversary_terwilliger import solve_symmetric_adversary, OR_layers, PARITY_layers
 from adversary_terwilliger_rescaled import solve_symmetric_adversary_rescaled
 from functions import f_or, f_deutsch_jozsa
 import numpy as np
@@ -288,8 +288,11 @@ solver_options = {
     },
 }
 
-n = 64
+n = 22
+
 
 #result = solve_symmetric_adversary(n, OR_layers(n), verbose = True)
 
-result = solve_symmetric_adversary_rescaled(n, OR_layers(n), verbose = True, solver_options=solver_options)
+#result = solve_symmetric_adversary_rescaled(n, OR_layers(n), verbose = True, solver_options=solver_options)
+
+result = solve_symmetric_adversary_rescaled(n, PARITY_layers(n), verbose = True, solver_options=solver_options)
