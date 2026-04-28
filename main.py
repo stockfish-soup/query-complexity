@@ -3,18 +3,21 @@ from tensor1 import tensor1
 from tensor2 import tensor2t, tensor2eps
 from adversary import adversary_primal, adversary_dual, adversary_primal_orbit_reduced, adversary_primal_step2_symmetric, adversary_primal_step_one_half_symmetric,  adversary_primal_step_one_half_sparse, adversary_primal_step_one_half_sparse_blocks
 from adversary_symmetry_reduced import adversary_symmetry_reduced, adversary_primal_step2_terwilliger_from_f_values
+from adversary_terwilliger import solve_symmetric_adversary, OR_layers
+from adversary_terwilliger_rescaled import solve_symmetric_adversary_rescaled
 from functions import f_or, f_deutsch_jozsa
 import numpy as np
 import cvxpy as cp
 from matplotlib import pyplot as plt
 import datetime
+import mosek
 
 ## First method examples ##
 
 m = 2
 n = 2 ** m
 
-n = 30
+n = 3
 
 t = 1
 
@@ -42,7 +45,7 @@ f_values = f_or(n)
 
 #value = adversary_symmetry_reduced(n,f_values,verbose = True)
 
-value = adversary_primal_step2_terwilliger_from_f_values(n,f_values,verbose = True)
+#value = adversary_primal_step2_terwilliger_from_f_values(n,f_values,verbose = True)
 
 #print(value)
 
@@ -269,3 +272,24 @@ for i in range(1,10):
     print("n = " + str(i) + " t_opt = " + str(out["query_complexity_upper_bound"]))
 
     """
+
+ 
+# OPTIONAL : use the dual for big n
+
+solver_options = {
+
+    "accept_unknown": True,
+    "mosek_params": {
+        "MSK_IPAR_INTPNT_SOLVE_FORM": "MSK_SOLVE_DUAL",
+        "MSK_IPAR_INTPNT_MAX_ITERATIONS": 200,
+        "MSK_DPAR_INTPNT_CO_TOL_REL_GAP": 1e-7,
+        "MSK_DPAR_INTPNT_CO_TOL_PFEAS": 1e-7,
+        "MSK_DPAR_INTPNT_CO_TOL_DFEAS": 1e-7,
+    },
+}
+
+n = 64
+
+#result = solve_symmetric_adversary(n, OR_layers(n), verbose = True)
+
+result = solve_symmetric_adversary_rescaled(n, OR_layers(n), verbose = True, solver_options=solver_options)
