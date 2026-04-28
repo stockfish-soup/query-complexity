@@ -2226,37 +2226,3 @@ def adversary_primal_step_one_half_sparse_blocks(
         "orbit_keys_H": orbit_keys,
         "precomp": precomp,
     }
-
-
-# ============================================================
-# Example
-# ============================================================
-
-if __name__ == "__main__":
-    from itertools import product
-
-    def OR(x):
-        return int(any(x))
-
-    n = 3
-    f_values = {x: OR(x) for x in product([0, 1], repeat=n)}
-
-    # Precompute once for this n / layer-union domain
-    precomp = precompute_step_one_half_sparse_blocks(n, allowed_layers=[0, 1, 2, 3])
-
-    # Solve OR_3
-    res = adversary_primal_step_one_half_sparse_blocks(
-        n=n,
-        f_values=f_values,
-        verbose=False,
-        half_objective=True,
-        precomp=precomp,
-    )
-
-    print("status:", res["status"])
-    print("value:", res["value"])
-    print("regular representation size:", res["regular_rep_size"])
-    print("num blocks:", res["num_blocks"])
-    print("block sizes:", res["block_sizes"])
-    print("beta:", res["beta"])
-    print("gamma:", res["gamma"])

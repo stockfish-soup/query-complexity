@@ -2,7 +2,7 @@ import itertools
 from tensor1 import tensor1
 from tensor2 import tensor2t, tensor2eps
 from adversary import adversary_primal, adversary_dual, adversary_primal_orbit_reduced, adversary_primal_step2_symmetric, adversary_primal_step_one_half_symmetric,  adversary_primal_step_one_half_sparse, adversary_primal_step_one_half_sparse_blocks
-from adversary_symmetry_reduced import adversary_symmetry_reduced
+from adversary_symmetry_reduced import adversary_symmetry_reduced, adversary_primal_step2_terwilliger_from_f_values
 from functions import f_or, f_deutsch_jozsa
 import numpy as np
 import cvxpy as cp
@@ -14,7 +14,7 @@ import datetime
 m = 2
 n = 2 ** m
 
-n = 19
+n = 30
 
 t = 1
 
@@ -39,6 +39,10 @@ f_values = f_or(n)
 #value = adversary_primal_step_one_half_sparse(n,f_values,verbose = True)
 
 #value = adversary_primal_step_one_half_sparse_blocks(n,f_values,verbose = True)
+
+#value = adversary_symmetry_reduced(n,f_values,verbose = True)
+
+value = adversary_primal_step2_terwilliger_from_f_values(n,f_values,verbose = True)
 
 #print(value)
 
@@ -75,7 +79,7 @@ plt.plot(L)
 
 plt.show()
 """
-
+"""
 n = 10
 
 f_values = f_or(n)
@@ -94,7 +98,7 @@ print("num blocks:", res["num_blocks"])
 print("block sizes:", res["block_sizes"])
 print("beta:", res["beta"])
 print("gamma:", res["gamma"])
-
+"""
 
 
 """
