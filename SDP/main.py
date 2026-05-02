@@ -17,7 +17,7 @@ import mosek
 m = 2
 n = 2 ** m
 
-n = 3
+n = 11
 
 t = 1
 
@@ -39,7 +39,7 @@ f_values = f_or(n)
 
 #value = adversary_primal_step_one_half_symmetric(n,f_values,verbose = True)
 
-#value = adversary_primal_step_one_half_sparse(n,f_values,verbose = True)
+value = adversary_primal_step_one_half_sparse(n,f_values,verbose = True)
 
 #value = adversary_primal_step_one_half_sparse_blocks(n,f_values,verbose = True)
 
@@ -288,11 +288,28 @@ solver_options = {
     },
 }
 
-n = 22
 
+
+n = 30
 
 #result = solve_symmetric_adversary(n, OR_layers(n), verbose = True)
 
-#result = solve_symmetric_adversary_rescaled(n, OR_layers(n), verbose = True, solver_options=solver_options)
+#result = solve_symmetric_adversary_rescaled(n, PARITY_layers(n), verbose = True, solver_options=solver_options)
 
-result = solve_symmetric_adversary_rescaled(n, PARITY_layers(n), verbose = True, solver_options=solver_options)
+
+# EXAMPLE
+
+#result = adversary_primal_step_one_half_sparse_blocks(n, f_or(n), verbose = True)
+
+#result = solve_symmetric_adversary(n, OR_layers(n), verbose = True)
+
+#result = solve_symmetric_adversary_rescaled(n, PARITY_layers(n), verbose = True, solver_options=solver_options)
+
+"""
+print("Number of blocks with Terwilliger block-diagonalization:",len(result["terwilliger_block_sizes"]))
+
+print("Blocks with Terwilliger block-diagonalization:",result["terwilliger_block_sizes"])
+
+print("Number of blocks:", result["num_blocks"])
+print("Block sizes:", result["block_sizes"])
+"""

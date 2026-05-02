@@ -1,16 +1,21 @@
 """
-Optimized symmetry-reduced adversary SDP for symmetric Boolean functions.
+Rescaled symmetry-reduced adversary SDP for symmetric Boolean functions.
 
 This file implements an analytic Step-2-style Terwilliger block reduction
 for the primal adversary SDP after Step 1 orbit reduction.
 
-Main optimizations:
-  1. Work from Hamming-layer values, not full truth tables.
-  2. Cache the representation/block precomputation.
-  3. Cache binomial and Schrijver/Terwilliger coefficients.
-  4. Cache function-specific active block terms.
-  5. Avoid rebuilding or scanning inactive block terms.
-  6. Convert diagonal-only blocks to scalar inequalities.
+Main choices:
+  * The objective is ALWAYS the full symmetric sum sum_{x,y} Gamma[x,y].
+    There is no half_objective option.
+  * The solver works from Hamming-layer values, not full truth tables.
+  * It caches the Terwilliger block precomputation.
+  * It rescales optimization variables:
+        alpha_k       = C(n,k) beta_k
+        eta_{a,b,t}   = N_{a,b,t} gamma_{a,b,t}
+    where N_{a,b,t} is the ordered-pair multiplicity used in the full
+    objective. Thus the mass constraints and objective have O(1) coefficients.
+  * It can optionally apply a positive diagonal congruence scaling D B D
+    to each PSD block, preserving PSD while improving numerical balance.
 
 The implementation assumes that the promise domain is a union of full
 Hamming layers.
@@ -151,7 +156,7 @@ def DJ_layers(N: int) -> LayerValue:
 
 
 # ============================================================
-# Orbit multiplicities for objective
+# Orbit multiplicities for full symmetric objective
 # ============================================================
 
 @lru_cache(maxsize=None)
@@ -173,6 +178,24 @@ def num_pairs_in_orbit(n: int, a: int, b: int, t: int) -> int:
     return binom_safe(n, a) * binom_safe(a, t) * binom_safe(n - a, b - t)
 
 
+@lru_cache(maxsize=None)
+def gamma_objective_multiplicity(n: int, a: int, b: int, t: int) -> int:
+    """
+    Ordered-pair multiplicity for the stored symmetric gamma variable.
+
+    Variables are stored with a <= b. The full objective is
+        sum_{x,y} Gamma[x,y].
+    If a < b, both orientations contribute.
+    """
+    n = int(n)
+    a = int(a)
+    b = int(b)
+    t = int(t)
+    if a == b:
+        return num_pairs_in_orbit(n, a, b, t)
+    return num_pairs_in_orbit(n, a, b, t) + num_pairs_in_orbit(n, b, a, t)
+
+
 # ============================================================
 # Schrijver/Terwilliger block coefficients
 # ============================================================
@@ -183,7 +206,7 @@ def beta_schrijver(m: int, i: int, j: int, k: int, t: int) -> int:
     Schrijver's beta coefficient beta^t_{i,j,k} for the Terwilliger
     algebra of the m-dimensional Hamming cube.
 
-    The formula is:
+    Formula:
         sum_u (-1)^(u-t) C(u,t) C(m-2k,u-k)
               C(m-k-u,i-u) C(m-k-u,j-u).
     """
@@ -195,8 +218,7 @@ def beta_schrijver(m: int, i: int, j: int, k: int, t: int) -> int:
 
     total = 0
 
-    # A conservative loop; binom_safe makes invalid terms zero.
-    # C(m-2k, u-k) already forces k <= u <= m-k.
+    # C(m-2k, u-k) forces k <= u <= m-k.
     for u in range(k, m - k + 1):
         c1 = binom_safe(u, t)
         if c1 == 0:
@@ -262,14 +284,7 @@ def precompute_adversary_terwilliger_blocks(
 
         M_1 = diag(beta) - Gamma o Delta_1.
 
-    We write x = (epsilon, x_rest), where epsilon is the first bit and
-    x_rest has length m = n - 1. The stabilizer H acts on x_rest.
-
-    The H-invariant algebra is a 2-by-2 extension of the Terwilliger
-    algebra of the m-dimensional Hamming cube.
-
-    Returns a precomputation object that can be reused across all symmetric
-    Boolean functions on the same union of Hamming layers.
+    The precomputation depends only on n and the set of promised layers.
     """
     n = int(n)
     allowed_layers_tuple = tuple(sorted(int(k) for k in allowed_layers))
@@ -282,11 +297,8 @@ def precompute_adversary_terwilliger_blocks(
     blocks = []
 
     for k in range(m // 2 + 1):
-        # Rest-coordinate weights participating in Schrijver's kth block.
         rest_weights = list(range(k, m - k + 1))
 
-        # Full block indices are pairs (epsilon, i), where epsilon is the
-        # first bit and i is the rest-coordinate Hamming weight.
         block_indices: List[Tuple[int, int]] = []
         for epsilon in (0, 1):
             for i in rest_weights:
@@ -299,9 +311,7 @@ def precompute_adversary_terwilliger_blocks(
 
         terms = []
 
-        # A term means:
-        #   row, col, H-orbit key, coefficient
-        # where H-orbit key = (x1, y1, |x|, |y|, |x cap y|).
+        # term = (row, col, H-orbit key, coefficient)
         for row, (x1, i) in enumerate(block_indices):
             for col, (y1, j) in enumerate(block_indices):
                 tau_min = max(0, i + j - m)
@@ -325,7 +335,7 @@ def precompute_adversary_terwilliger_blocks(
             "terms": terms,
         })
 
-    precomp: Dict[str, Any] = {
+    return {
         "n": n,
         "m": m,
         "allowed_layers": allowed_layers_tuple,
@@ -334,8 +344,6 @@ def precompute_adversary_terwilliger_blocks(
         "num_terwilliger_blocks": len(blocks),
         "active_cache": {},
     }
-
-    return precomp
 
 
 def get_terwilliger_precomp(n: int, allowed_layers: Iterable[int]) -> Dict[str, Any]:
@@ -441,8 +449,7 @@ def compile_active_blocks(
       - kind == "beta",  data = layer k,          contribution = signed_coeff * beta[k]
       - kind == "gamma", data = (a,b,t), a <= b, contribution = signed_coeff * gamma[a,b,t]
 
-    The sign for gamma is already included, because M_1 has
-        - Gamma o Delta_1.
+    The sign for gamma is already included, because M_1 has - Gamma o Delta_1.
     """
     normalized_layer_value = normalize_layer_value(layer_value)
     sig = layer_signature(normalized_layer_value)
@@ -508,60 +515,134 @@ def scalar_bmat(entries: List[List[Any]]):
     return cp.bmat([[scalar_to_1x1(e) for e in row] for row in entries])
 
 
-def solve_cvxpy_problem(problem: cp.Problem, solver=None, verbose: bool = False):
+def available_default_solver():
+    """
+    Choose a reasonable default installed solver.
+    MOSEK is generally preferred for SDPs if licensed; SDPA is tried next;
+    SCS is a fallback.
+    """
+    installed = set(cp.installed_solvers())
+    if "MOSEK" in installed:
+        return cp.MOSEK
+    if "SDPA" in installed:
+        return cp.SDPA
+    return cp.SCS
+
+
+def solve_cvxpy_problem(
+    problem: cp.Problem,
+    solver=None,
+    verbose: bool = False,
+    solver_options: Optional[Mapping[str, Any]] = None,
+):
+    opts = dict(solver_options or {})
+
     if solver is not None:
-        return problem.solve(solver=solver, verbose=verbose)
+        return problem.solve(solver=solver, verbose=verbose, **opts)
 
-    try:
-        return problem.solve(solver=cp.MOSEK, verbose=verbose)
-    except Exception:
-        return problem.solve(solver=cp.SCS, verbose=verbose, eps=1e-6)
+    chosen = available_default_solver()
+    if chosen == cp.SCS:
+        # These are intentionally conservative defaults for an SDP fallback.
+        opts.setdefault("eps", 1e-6)
+        opts.setdefault("max_iters", 200000)
+
+    return problem.solve(solver=chosen, verbose=verbose, **opts)
 
 
 # ============================================================
-# Main optimized solver from layer values
+# Rescaling helpers
 # ============================================================
 
-def adversary_primal_step2_optimized_from_layers(
+def coefficient_scale_for_term(n: int, kind: str, data: Any) -> float:
+    """
+    Return the denominator that converts scaled variables back to the
+    original SDP variables.
+
+    alpha_k = C(n,k) beta_k      => beta_k = alpha_k / C(n,k)
+    eta_g   = N_g gamma_g        => gamma_g = eta_g / N_g
+    """
+    if kind == "beta":
+        return float(full_layer_size(n, int(data)))
+
+    if kind == "gamma":
+        a, b, t = data
+        mult = gamma_objective_multiplicity(n, a, b, t)
+        if mult <= 0:
+            raise ValueError(f"Zero gamma objective multiplicity for {(a, b, t)}.")
+        return float(mult)
+
+    raise ValueError(f"Unknown term kind {kind!r}.")
+
+
+def block_row_scales(
+    n: int,
+    m_block: int,
+    terms: List[Tuple[int, int, float, str, Any]],
+    enabled: bool = True,
+) -> List[float]:
+    """
+    Compute diagonal scaling factors d_i for a congruence D B D.
+
+    The heuristic uses the absolute coefficient mass in each row after
+    variable rescaling. This does not change the feasibility condition:
+        B >= 0 iff D B D >= 0
+    for positive diagonal D.
+    """
+    if not enabled:
+        return [1.0] * m_block
+
+    row_mass = [0.0 for _ in range(m_block)]
+
+    for row, col, signed_coeff, kind, data in terms:
+        scale = coefficient_scale_for_term(n, kind, data)
+        c = abs(float(signed_coeff)) / scale
+        row_mass[row] += c
+        if col != row:
+            row_mass[col] += c
+
+    d = []
+    for mass in row_mass:
+        if mass <= 0:
+            d.append(1.0)
+        else:
+            # Clamp to avoid creating extreme constants from near-zero rows.
+            mass = max(mass, 1e-300)
+            d.append(1.0 / sqrt(mass))
+    return d
+
+
+# ============================================================
+# Main rescaled solver from layer values
+# ============================================================
+
+def adversary_primal_step2_rescaled_from_layers(
     n: int,
     layer_value: Mapping[int, Any],
     solver=None,
     verbose: bool = False,
+    solver_options: Optional[Mapping[str, Any]] = None,
     precomp: Optional[Dict[str, Any]] = None,
     split_specific_blocks: bool = True,
     diagonal_blocks_as_inequalities: bool = True,
+    balance_psd_blocks: bool = True,
 ) -> Dict[str, Any]:
     """
-    Solve the symmetry-reduced primal adversary SDP using the optimized
-    Terwilliger block implementation.
+    Solve the symmetry-reduced primal adversary SDP using rescaled variables.
 
-    Parameters
-    ----------
-    n:
-        Input length.
-    layer_value:
-        Dictionary k -> f-value on Hamming layer k.
-        The promise domain is the union of these full layers.
-    solver:
-        Optional CVXPY solver.
-    verbose:
-        Solver verbosity.
-    half_objective:
-        If True, optimize 1/2 * sum_{x,y} Gamma[x,y].
-        If False, optimize the full symmetric sum.
-    precomp:
-        Reusable output of get_terwilliger_precomp or
-        precompute_adversary_terwilliger_blocks.
-    split_specific_blocks:
-        If True, split Terwilliger blocks using the zero pattern of the
-        specific function.
-    diagonal_blocks_as_inequalities:
-        If True, diagonal-only blocks are added as scalar inequalities
-        instead of PSD cones.
+    Objective convention:
+      This function ALWAYS maximizes the full symmetric sum
+          sum_{x,y} Gamma[x,y].
+      There is intentionally no half-objective option.
 
-    Returns
-    -------
-    dict with value, status, variables, and block-size statistics.
+    Rescaled variables:
+        alpha_k     = C(n,k) beta_k
+        eta_{a,b,t} = N_{a,b,t} gamma_{a,b,t}
+
+    Thus the normalization constraints become
+        sum_{k in f^{-1}(0)} alpha_k = 1/2,
+        sum_{k in f^{-1}(1)} alpha_k = 1/2,
+    and the objective becomes
+        maximize sum_g eta_g.
     """
     n = int(n)
     layer_value_norm = normalize_layer_value(layer_value)
@@ -590,10 +671,10 @@ def adversary_primal_step2_optimized_from_layers(
             raise ValueError("Precomputation allowed_layers do not match.")
 
     # ----------------------------------------------------------
-    # Variables
+    # Rescaled variables
     # ----------------------------------------------------------
-    beta = {
-        k: cp.Variable(nonneg=True, name=f"beta_{k}")
+    alpha = {
+        k: cp.Variable(nonneg=True, name=f"alpha_{k}")
         for k in allowed_layers
     }
 
@@ -609,8 +690,8 @@ def adversary_primal_step2_optimized_from_layers(
 
     gamma_keys = sorted(gamma_key_set)
 
-    gamma = {
-        key: cp.Variable(name=f"gamma_{key[0]}_{key[1]}_{key[2]}")
+    eta = {
+        key: cp.Variable(name=f"eta_{key[0]}_{key[1]}_{key[2]}")
         for key in gamma_keys
     }
 
@@ -619,14 +700,9 @@ def adversary_primal_step2_optimized_from_layers(
     # ----------------------------------------------------------
     constraints = []
 
-    constraints.append(
-        cp.sum([full_layer_size(n, k) * beta[k] for k in zero_layers]) == 0.5
-    )
-    constraints.append(
-        cp.sum([full_layer_size(n, k) * beta[k] for k in one_layers]) == 0.5
-    )
+    constraints.append(cp.sum([alpha[k] for k in zero_layers]) == 0.5)
+    constraints.append(cp.sum([alpha[k] for k in one_layers]) == 0.5)
 
-    # Function-specific active blocks are cached inside precomp.
     active_blocks = compile_active_blocks(
         precomp=precomp,
         layer_value=layer_value_norm,
@@ -641,23 +717,31 @@ def adversary_primal_step2_optimized_from_layers(
         m_block = int(block["size"])
         terms = block["terms"]
 
-        # Optional cheap case: if all terms are diagonal, replace PSD with
-        # scalar nonnegativity of diagonal entries.
+        row_scales = block_row_scales(
+            n=n,
+            m_block=m_block,
+            terms=terms,
+            enabled=balance_psd_blocks,
+        )
+
+        # Optional cheap case: diagonal-only block -> scalar inequalities.
         if diagonal_blocks_as_inequalities and all(row == col for row, col, *_ in terms):
             diag_entries = [0 for _ in range(m_block)]
 
             for row, _col, signed_coeff, kind, data in terms:
                 if kind == "beta":
-                    expr = beta[data]
+                    var = alpha[int(data)]
                 elif kind == "gamma":
-                    expr = gamma[data]
+                    var = eta[data]
                 else:
                     raise ValueError(f"Unknown term kind {kind!r}.")
 
-                diag_entries[row] = diag_entries[row] + signed_coeff * expr
+                denom = coefficient_scale_for_term(n, kind, data)
+                c = float(signed_coeff) / denom
+                c *= row_scales[row] * row_scales[row]
+                diag_entries[row] = diag_entries[row] + c * var
 
             for expr in diag_entries:
-                # Skip trivial numeric zero constraints.
                 if isinstance(expr, Number) and abs(float(expr)) == 0:
                     continue
                 constraints.append(expr >= 0)
@@ -670,13 +754,16 @@ def adversary_primal_step2_optimized_from_layers(
 
         for row, col, signed_coeff, kind, data in terms:
             if kind == "beta":
-                expr = beta[data]
+                var = alpha[int(data)]
             elif kind == "gamma":
-                expr = gamma[data]
+                var = eta[data]
             else:
                 raise ValueError(f"Unknown term kind {kind!r}.")
 
-            entries[row][col] = entries[row][col] + signed_coeff * expr
+            denom = coefficient_scale_for_term(n, kind, data)
+            c = float(signed_coeff) / denom
+            c *= row_scales[row] * row_scales[col]
+            entries[row][col] = entries[row][col] + c * var
 
         Bred = scalar_bmat(entries)
         Bred = 0.5 * (Bred + Bred.T)
@@ -691,36 +778,52 @@ def adversary_primal_step2_optimized_from_layers(
         final_block_sizes.append(m_block)
 
     # ----------------------------------------------------------
-    # Objective
+    # Full symmetric objective in rescaled variables:
+    #     sum_{x,y} Gamma[x,y] = sum_g eta_g.
     # ----------------------------------------------------------
-    objective_expr = 0
-
-    for (a, b, t), var in gamma.items():
-        if a == b:
-            mult = num_pairs_in_orbit(n, a, b, t)
-        else:
-            mult = num_pairs_in_orbit(n, a, b, t) + num_pairs_in_orbit(n, b, a, t)
-
-        objective_expr += mult * var
+    objective_expr = cp.sum([eta[key] for key in gamma_keys])
 
     problem = cp.Problem(cp.Maximize(objective_expr), constraints)
-    value = solve_cvxpy_problem(problem, solver=solver, verbose=verbose)
+    value = solve_cvxpy_problem(
+        problem,
+        solver=solver,
+        verbose=verbose,
+        solver_options=solver_options,
+    )
+
+    # Recover original variables for readability.
+    beta_values = {}
+    for k, var in alpha.items():
+        beta_values[k] = None if var.value is None else float(var.value) / float(full_layer_size(n, k))
+
+    gamma_values = {}
+    for key, var in eta.items():
+        mult = float(gamma_objective_multiplicity(n, *key))
+        gamma_values[key] = None if var.value is None else float(var.value) / mult
+
+    alpha_values = {k: alpha[k].value for k in alpha}
+    eta_values = {key: eta[key].value for key in eta}
 
     return {
         "value": value,
         "status": problem.status,
-        "beta": {k: beta[k].value for k in beta},
-        "gamma": {k: gamma[k].value for k in gamma},
+        "objective_convention": "full_symmetric_sum",
+        "alpha": alpha_values,
+        "eta": eta_values,
+        "beta": beta_values,
+        "gamma": gamma_values,
         "allowed_layers": allowed_layers,
         "terwilliger_block_sizes": precomp["terwilliger_block_sizes"],
-        "final_block_sizes": final_block_sizes,
+        "block_sizes": final_block_sizes,
         "psd_cone_sizes": psd_cone_sizes,
         "scalar_inequality_count": scalar_inequality_count,
-        "num_active_blocks": len(active_blocks),
+        "num_blocks": len(active_blocks),
         "num_psd_cones": len(psd_cone_sizes),
-        "num_gamma_variables": len(gamma_keys),
-        "num_beta_variables": len(beta),
+        "num_eta_variables": len(gamma_keys),
+        "num_alpha_variables": len(alpha),
         "precomp": precomp,
+        "solver_stats": problem.solver_stats,
+        "problem": problem,
     }
 
 
@@ -733,8 +836,7 @@ def layer_values_from_f_values(n: int, f_values: Mapping[Any, Any]) -> LayerValu
     Convert an explicit table x -> f(x) into layer values.
     This verifies that the domain is a union of full Hamming layers.
 
-    This wrapper is convenient for small n. For large n, prefer passing
-    layer_value directly, e.g. OR_layers(n).
+    Convenient for small n. For large n, prefer passing layer_value directly.
     """
     n = int(n)
     layer_value: LayerValue = {}
@@ -766,14 +868,16 @@ def layer_values_from_f_values(n: int, f_values: Mapping[Any, Any]) -> LayerValu
     return dict(sorted(layer_value.items()))
 
 
-def adversary_primal_step2_optimized_from_f_values(
+def adversary_primal_step2_rescaled_from_f_values(
     n: int,
     f_values: Mapping[Any, Any],
     solver=None,
     verbose: bool = False,
+    solver_options: Optional[Mapping[str, Any]] = None,
     precomp: Optional[Dict[str, Any]] = None,
     split_specific_blocks: bool = True,
     diagonal_blocks_as_inequalities: bool = True,
+    balance_psd_blocks: bool = True,
 ) -> Dict[str, Any]:
     """
     Convenience wrapper accepting an explicit dictionary x -> f(x).
@@ -781,14 +885,16 @@ def adversary_primal_step2_optimized_from_f_values(
     """
     layer_value = layer_values_from_f_values(n, f_values)
 
-    return adversary_primal_step2_optimized_from_layers(
+    return adversary_primal_step2_rescaled_from_layers(
         n=n,
         layer_value=layer_value,
         solver=solver,
         verbose=verbose,
+        solver_options=solver_options,
         precomp=precomp,
         split_specific_blocks=split_specific_blocks,
         diagonal_blocks_as_inequalities=diagonal_blocks_as_inequalities,
+        balance_psd_blocks=balance_psd_blocks,
     )
 
 
@@ -796,48 +902,41 @@ def adversary_primal_step2_optimized_from_f_values(
 # Short public API
 # ============================================================
 
-def solve_symmetric_adversary(
+def solve_symmetric_adversary_rescaled(
     n: int,
     layer_value: Mapping[int, Any],
     solver=None,
     verbose: bool = False,
+    solver_options: Optional[Mapping[str, Any]] = None,
     split_specific_blocks: bool = True,
     diagonal_blocks_as_inequalities: bool = True,
+    balance_psd_blocks: bool = True,
 ) -> Dict[str, Any]:
     """
     Recommended high-level API.
 
     Example:
         res = solve_symmetric_adversary(10, OR_layers(10))
+
+    The objective convention is always the full symmetric sum.
     """
     layer_value_norm = normalize_layer_value(layer_value)
     precomp = get_terwilliger_precomp(n, layer_value_norm.keys())
 
-    return adversary_primal_step2_optimized_from_layers(
+    return adversary_primal_step2_rescaled_from_layers(
         n=n,
         layer_value=layer_value_norm,
         solver=solver,
         verbose=verbose,
+        solver_options=solver_options,
         precomp=precomp,
         split_specific_blocks=split_specific_blocks,
         diagonal_blocks_as_inequalities=diagonal_blocks_as_inequalities,
+        balance_psd_blocks=balance_psd_blocks,
     )
 
 
-# ============================================================
-# Example usage
-# ============================================================
+# Backward-compatible aliases with the new full-objective convention.
+adversary_primal_step2_optimized_from_layers = adversary_primal_step2_rescaled_from_layers
+adversary_primal_step2_optimized_from_f_values = adversary_primal_step2_rescaled_from_f_values
 
-if __name__ == "__main__":
-    # Fast OR_3 example using layer values, not a truth table.
-    n = 3
-    result = solve_symmetric_adversary(n, OR_layers(n), verbose=False)
-
-    print("status:", result["status"])
-    print("value:", result["value"])
-    print("Terwilliger block sizes:", result["terwilliger_block_sizes"])
-    print("Final active block sizes:", result["final_block_sizes"])
-    print("PSD cone sizes:", result["psd_cone_sizes"])
-    print("Scalar inequalities:", result["scalar_inequality_count"])
-    print("beta:", result["beta"])
-    print("gamma:", result["gamma"])
