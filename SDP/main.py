@@ -40,7 +40,7 @@ f_values = f_or(n)
 
 #value = adversary_primal_step_one_half_symmetric(n,f_values,verbose = True)
 
-value = adversary_primal_step_one_half_sparse(n,f_values,verbose = True)
+#value = adversary_primal_step_one_half_sparse(n,f_values,verbose = True)
 
 #value = adversary_primal_step_one_half_sparse_blocks(n,f_values,verbose = True)
 
@@ -314,3 +314,31 @@ print("Blocks with Terwilliger block-diagonalization:",result["terwilliger_block
 print("Number of blocks:", result["num_blocks"])
 print("Block sizes:", result["block_sizes"])
 """
+import sys
+
+from adversary_triangle import *
+from adversary_triangle_reduced import *
+
+chosen_solver = None
+avail = cp.installed_solvers()
+for s in (cp.MOSEK, cp.CLARABEL, cp.SCS):
+    if s in avail:
+        chosen_solver = s
+        break
+print(f"Using solver: {chosen_solver}\n")
+
+ns = [3, 4, 5]
+if "--n5" in sys.argv:
+    ns.append(5)
+
+for n in ns:
+    print(f"\n=== triangle finding on K_{n}  (Specht-blocked) ===")
+    t0 = datetime.datetime.now()
+    result = adversary_blocked_triangle(
+        n, solver=chosen_solver, verbose=True)
+    t1 = datetime.datetime.now()
+    print(f"\n  status:           {result['status']}")
+    print(f"  ADV_pm:           {result['value']:.6f}")
+    print(f"  blocks:           "
+            f"{[U for U in result['block_sizes'].values()]}")
+    print(f"  total time:       {t1 - t0}")
