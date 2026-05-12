@@ -327,7 +327,7 @@ for s in (cp.MOSEK, cp.CLARABEL, cp.SCS):
         break
 print(f"Using solver: {chosen_solver}\n")
 
-ns = [3, 4, 5]
+ns = [6]
 if "--n5" in sys.argv:
     ns.append(5)
 

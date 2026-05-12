@@ -33,10 +33,12 @@ Here "+" means direct sum, matching the public/private-space convention.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable, Iterable, Sequence, Any
+from typing import Any, Callable, Iterable, Sequence
 
 import numpy as np
 import scipy.linalg as la
+
+from scipy.optimize import minimize
 
 try:
     import cvxpy as cp
@@ -74,6 +76,96 @@ class TransducerUnitary:
     gram_error: float
     map_error: float
     unitarity_error: float
+
+def adversary_primal(
+    domain: Sequence[Sequence[Any]],
+    values: Sequence[Any] | None = None,
+    solver=None, 
+    verbose=True
+):
+    
+    """
+    
+    Solves the reformulated adversary bound primal SDP, as in Arjan's thesis, section 6.2.4
+
+    Parameters
+    -------
+
+    Domain points x -> f(x); total or promise-only
+
+    Returns
+    -------
+    value : float
+        Optimal SDP value.
+    X_values : list[np.ndarray]
+        Optimal matrices X_j.
+    t_value : float
+        Optimal t.
+    
+    """
+
+    f_0 = []
+    f_1 = []
+
+    n = len(domain[0])
+
+    for i in range(len(domain)):
+        if values[i] == -1 or values[i] == 0:
+            f_0.append(i)
+        else:
+            f_1.append(i)
+
+    m = len(domain)
+
+    Gamma = cp.Variable((m, m), symmetric=True)
+    beta = cp.Variable(m)
+
+    # Define the Delta_j matrices
+
+    deltas = []
+
+    for j in range(n): 
+        Dj = np.zeros((m, m), dtype=float)
+        for a, xa in enumerate(domain):
+            for b, xb in enumerate(domain):
+                Dj[a, b] = 1.0 if xa[j] != xb[j] else 0.0
+        deltas.append(Dj)
+
+    ## CONSTRAINTS ##
+
+    constraints = []
+
+    # Optional 
+
+    constraints.append(beta >= 0)
+
+    # Impose Gamma_ab = 0 if f(a) = f(b)
+
+    for a in range(m):
+        for b in range(m):
+            if values[a] == values[b]:
+                constraints.append(Gamma[a, b] == 0)
+
+    # First constraint
+
+    for j in range(n):
+        constraints.append(cp.diag(beta) - cp.multiply(Gamma, deltas[j]) >> 0)
+
+    # Equality constraints
+
+    constraints.append(cp.sum(beta[f_0]) == 0.5)
+    constraints.append(cp.sum(beta[f_1]) == 0.5)
+
+    objective = cp.Maximize(cp.sum(Gamma))
+    problem = cp.Problem(objective, constraints)
+
+    if solver is not None:
+        value = problem.solve(solver=solver, verbose=verbose)
+    else:
+        value = problem.solve(solver=cp.SCS, verbose=verbose)
+
+    return value, Gamma.value, beta.value, problem.status
+
 
 
 def all_binary_inputs(n: int) -> list[tuple[int, ...]]:
@@ -257,6 +349,121 @@ def solve_general_adversary_sdp(
         alphabet_values=alphabet_values,
     )
 
+
+def solve_adversary_min_rank(
+    inputs: Sequence[Sequence[Any]],
+    outputs: Sequence[Any] | None = None,
+    f: Callable[[tuple[Any, ...]], Any] | None = None,
+    epsilon: float = 0.1**3,
+    *,
+    solver: str | None = None,
+    solver_kwargs: dict[str, Any] | None = None,
+    psd_factor_tol: float = 1e-8,
+) -> GeneralAdversarySolution:
+    """
+    Solve the general-adversary SDP and factor the resulting Gram matrices.
+
+    Args:
+        inputs: finite domain D, as tuples/lists of coordinate values.
+        outputs: f(x) values for each x; either outputs or f must be supplied.
+        f: function used to compute outputs when outputs is None.
+        solver: cvxpy solver name. If omitted, CLARABEL is preferred, then SCS.
+        solver_kwargs: extra keyword args passed to Problem.solve().
+        psd_factor_tol: tolerance used when extracting vectors from PSD blocks.
+
+    Returns:
+        A GeneralAdversarySolution containing explicit vector rows u_{x,i}, v_{x,i}.
+    """
+    _require_cvxpy()
+    raw_inputs = [tuple(x) for x in inputs]
+    if outputs is None:
+        if f is None:
+            raise ValueError("provide outputs or f")
+        raw_outputs = [f(x) for x in raw_inputs]
+    else:
+        raw_outputs = list(outputs)
+        if len(raw_outputs) != len(raw_inputs):
+            raise ValueError("len(outputs) must equal len(inputs)")
+        
+    adv_value = adversary_primal(inputs, outputs)[0]
+
+    norm_inputs, norm_outputs, _, _ = normalize_instance(raw_inputs, raw_outputs)
+    m = len(norm_inputs)
+    n = len(norm_inputs[0])
+    alphabet_values = [sorted({x[j] for x in norm_inputs} | {0}) for j in range(n)]
+
+    A_vars = []  # Gram of u_{.,i}
+    B_vars = []  # Gram of v_{.,i}
+    Z_vars = []  # Cross Gram <u_{x,i}, v_{y,i}>
+    constraints = []
+    t = cp.Variable(name="adv")
+    constraints.append(t >= 0)
+
+    for i in range(n):
+        A = cp.Variable((m, m), symmetric=True, name=f"Ugram_{i}")
+        B = cp.Variable((m, m), symmetric=True, name=f"Vgram_{i}")
+        Z = cp.Variable((m, m), name=f"Zcross_{i}")
+        block = cp.bmat([[A, Z], [Z.T, B]])
+        constraints.append(block >> 0)
+        A_vars.append(A)
+        B_vars.append(B)
+        Z_vars.append(Z)
+
+    input_costs = []
+
+    for x_idx in range(m):
+        cost_x = 0
+        for i in range(n):
+            cost_x += 0.5*(A_vars[i][x_idx, x_idx] + B_vars[i][x_idx, x_idx])
+        input_costs.append(cost_x)
+        constraints.append(cost_x <= adv_value + epsilon)
+
+    for x_idx, x in enumerate(norm_inputs):
+        for y_idx, y in enumerate(norm_inputs):
+            lhs_terms = [Z_vars[i][x_idx, y_idx] for i in range(n) if x[i] != y[i]]
+            lhs = cp.sum(lhs_terms) if lhs_terms else 0
+            rhs = 1.0 if norm_outputs[x_idx] != norm_outputs[y_idx] else 0.0
+            constraints.append(lhs == rhs)
+
+
+    problem = cp.Problem(cp.Minimize(cp.sum(input_costs)), constraints)  
+    if solver_kwargs is None:
+        solver_kwargs = {}
+    if solver is None:
+        installed = set(cp.installed_solvers())
+        solver = "CLARABEL" if "CLARABEL" in installed else "SCS"
+    problem.solve(solver=solver, **solver_kwargs, verbose = True)
+
+    if problem.status not in {cp.OPTIMAL, cp.OPTIMAL_INACCURATE}:
+        raise RuntimeError(f"SDP solve failed with status {problem.status}")
+
+    u_vecs: list[Array] = []
+    v_vecs: list[Array] = []
+    block_grams: list[Array] = []
+    cross_grams: list[Array] = []
+    for i in range(n):
+        M = np.block([
+            [np.asarray(A_vars[i].value, dtype=float), np.asarray(Z_vars[i].value, dtype=float)],
+            [np.asarray(Z_vars[i].value, dtype=float).T, np.asarray(B_vars[i].value, dtype=float)],
+        ])
+        M = 0.5 * (M + M.T)
+        R = _psd_factor(M, tol=psd_factor_tol)
+        u_vecs.append(R[:m, :])
+        v_vecs.append(R[m:, :])
+        block_grams.append(M)
+        cross_grams.append(np.asarray(Z_vars[i].value, dtype=float))
+
+    return GeneralAdversarySolution(
+        inputs=norm_inputs,
+        outputs=norm_outputs,
+        objective_value=float(problem.value),
+        status=str(problem.status),
+        u=u_vecs,
+        v=v_vecs,
+        block_grams=block_grams,
+        cross_grams=cross_grams,
+        alphabet_values=alphabet_values,
+    )
 
 def _make_private_basis_slices(sol: GeneralAdversarySolution) -> tuple[int, dict[tuple[int, str, int], slice]]:
     """Allocate direct-sum private basis blocks (i, direction, query_symbol)."""
@@ -457,29 +664,6 @@ def verify_adversary_constraints(sol: GeneralAdversarySolution) -> dict[str, flo
         "max_diagonal_cost": float(max(costs) if costs else 0.0),
         "objective_value": float(sol.objective_value),
     }
-
-
-def demo_or_2() -> None:
-    """Small executable demo: OR on two bits."""
-    inputs = all_binary_inputs(2)
-    outputs = [int(any(x)) for x in inputs]
-    sol = solve_general_adversary_sdp(
-        inputs,
-        outputs,
-        solver="CLARABEL",
-        solver_kwargs={"tol_gap_abs": 1e-9, "tol_feas": 1e-9, "tol_gap_rel": 1e-9},
-    )
-    transducer = compute_transducer_unitary(sol)
-    print("status:", sol.status)
-    print("Adv objective:", sol.objective_value)
-    print("constraint residuals:", verify_adversary_constraints(sol))
-    print("U shape:", transducer.U.shape)
-    print("Gram error:", transducer.gram_error)
-    print("map error ||U A - B||_F:", transducer.map_error)
-    print("unitarity error ||U*U-I||_F:", transducer.unitarity_error)
-
-
-# Demo entry point is defined at the end of the file, after all helper functions.
 
 
 def query_completion_for_input(
@@ -823,4 +1007,761 @@ def show_W_size(sol, *, assume_boolean_query_register=True, print_report=True):
 
     return report
 
+@dataclass(frozen=True)
+class OneVectorDirectSumAdversarySolution:
+    inputs: list[tuple[int, ...]]
+    outputs: list[int]
 
+    objective_value: float
+    adversary_cap: float
+    status: str
+
+    # w[i][x, :] is |w_{x,i}> in H_i ⊗ W_i
+    w: list[Array]
+
+    # G_i is the PSD Gram matrix indexed by pairs (x, local_query_symbol)
+    block_grams: list[Array]
+
+    alphabet_values: list[list[int]]
+    local_oracles: list[list[Array]]      # local_oracles[i][x] = O_{x_i} on H_i
+
+    public_dim: int
+    local_oracle_dims: list[int]
+    witness_dims: list[int]
+    private_dim: int
+
+
+@dataclass(frozen=True)
+class OneVectorDirectSumTransducerUnitary:
+    U: Array
+
+    source_states: Array      # columns: |0> plus after-query catalyst
+    target_states: Array      # columns: |f(x)> plus before-query catalyst
+
+    inputs: list[tuple[int, ...]]
+    outputs: list[int]
+
+    w: list[Array]
+    local_oracles: list[list[Array]]
+
+    public_dim: int
+    local_oracle_dims: list[int]
+    witness_dims: list[int]
+    private_dim: int
+
+    catalyst_norms: Array
+    adversary_value: float
+
+    gram_error: float
+    map_error: float
+    unitarity_error: float
+
+
+def _one_vector_local_oracle_for_symbol(
+    xi: int,
+    alphabet: list[int],
+) -> Array:
+    """
+    Local state-generating query completion on H_i.
+
+    It swaps |0> and |x_i>, and fixes all other local query symbols.
+    """
+    q = len(alphabet)
+    index = {a: k for k, a in enumerate(alphabet)}
+
+    if 0 not in index:
+        raise ValueError("alphabet must contain 0")
+    if xi not in index:
+        raise ValueError("input symbol not present in alphabet")
+
+    O = np.zeros((q, q), dtype=float)
+
+    for col, symbol in enumerate(alphabet):
+        if symbol == 0:
+            dest = xi
+        elif symbol == xi:
+            dest = 0
+        else:
+            dest = symbol
+
+        row = index[dest]
+        O[row, col] = 1.0
+
+    return O
+
+
+def _one_vector_local_component_index(
+    x_idx: int,
+    local_symbol_idx: int,
+    local_dim: int,
+) -> int:
+    """
+    Index the local Gram matrix G_i by the pair (x, a).
+    """
+    return x_idx * local_dim + local_symbol_idx
+
+
+def solve_adversary_min_rank_one_vector_direct_sum(
+    inputs: Sequence[Sequence[Any]],
+    outputs: Sequence[Any] | None = None,
+    f: Callable[[tuple[Any, ...]], Any] | None = None,
+    epsilon: float = 0.1**3,
+    *,
+    solver: str | None = None,
+    solver_kwargs: dict[str, Any] | None = None,
+    psd_factor_tol: float = 1e-8,
+) -> OneVectorDirectSumAdversarySolution:
+    """
+    One-vector direct-sum version of solve_adversary_min_rank.
+
+    This solves the state-conversion adversary formulation for function evaluation,
+
+        |sigma_x> = |0>,
+        |tau_x>   = |f(x)>,
+
+    with the witness decomposed as
+
+        |w_x> = ⊕_i |w_{x,i}>,
+
+    where
+
+        |w_{x,i}> ∈ H_i ⊗ W_i.
+
+    The constraints are
+
+        sum_i <w_{x,i}| (I - O_{x_i}^* O_{y_i}) ⊗ I_{W_i} |w_{y,i}>
+            =
+        1 - 1[f(x) = f(y)].
+
+    This is implemented with one PSD Gram matrix G_i per input index i.
+
+    The structure mirrors your two-vector solve_adversary_min_rank:
+
+      1. solve adversary_primal(...) to get adv_value;
+      2. constrain each input cost <= adv_value + epsilon;
+      3. minimize the sum of input costs;
+      4. factor each PSD block G_i into explicit witnesses w_{x,i}.
+    """
+    _require_cvxpy()
+
+    raw_inputs = [tuple(x) for x in inputs]
+
+    if outputs is None:
+        if f is None:
+            raise ValueError("provide outputs or f")
+        raw_outputs = [f(x) for x in raw_inputs]
+    else:
+        raw_outputs = list(outputs)
+        if len(raw_outputs) != len(raw_inputs):
+            raise ValueError("len(outputs) must equal len(inputs)")
+
+    # First pass: old adversary value.
+    adv_value = adversary_primal(inputs, raw_outputs, solver=solver, verbose=True)[0]
+
+    norm_inputs, norm_outputs, _, _ = normalize_instance(raw_inputs, raw_outputs)
+
+    m = len(norm_inputs)
+    n = len(norm_inputs[0])
+    public_dim = max(max(norm_outputs) + 1, 1)
+
+    alphabet_values = [
+        sorted({x[i] for x in norm_inputs} | {0})
+        for i in range(n)
+    ]
+
+    local_oracles: list[list[Array]] = []
+    local_oracle_dims: list[int] = []
+
+    for i in range(n):
+        alphabet = alphabet_values[i]
+        local_oracle_dims.append(len(alphabet))
+
+        local_oracles_i = [
+            _one_vector_local_oracle_for_symbol(x[i], alphabet)
+            for x in norm_inputs
+        ]
+
+        local_oracles.append(local_oracles_i)
+
+    G_vars = []
+    constraints = []
+    input_costs = []
+
+    for i in range(n):
+        q_i = local_oracle_dims[i]
+        gram_dim_i = m * q_i
+
+        G_i = cp.Variable(
+            (gram_dim_i, gram_dim_i),
+            symmetric=True,
+            name=f"one_vector_direct_sum_gram_{i}",
+        )
+
+        constraints.append(G_i >> 0)
+        G_vars.append(G_i)
+
+    # Input costs:
+    #
+    # C_x = sum_i ||w_{x,i}||^2
+    #     = sum_i sum_a G_i[(x,a),(x,a)].
+    for x_idx in range(m):
+        cost_x = 0
+
+        for i in range(n):
+            q_i = local_oracle_dims[i]
+
+            for a in range(q_i):
+                idx = _one_vector_local_component_index(x_idx, a, q_i)
+                cost_x += G_vars[i][idx, idx]
+
+        input_costs.append(cost_x)
+        constraints.append(cost_x <= adv_value + epsilon)
+
+    # State-conversion equality constraints:
+    #
+    # sum_i <w_{x,i}| (I - O_{x_i}^* O_{y_i}) ⊗ I |w_{y,i}>
+    #     =
+    # 1 - 1[f(x) = f(y)].
+    for x_idx, x in enumerate(norm_inputs):
+        for y_idx, y in enumerate(norm_inputs):
+            lhs = 0
+
+            for i in range(n):
+                q_i = local_oracle_dims[i]
+                Oxi = local_oracles[i][x_idx]
+                Oyi = local_oracles[i][y_idx]
+
+                Kxy_i = np.eye(q_i, dtype=float) - Oxi.T @ Oyi
+
+                for a in range(q_i):
+                    row = _one_vector_local_component_index(x_idx, a, q_i)
+
+                    for b in range(q_i):
+                        col = _one_vector_local_component_index(y_idx, b, q_i)
+                        lhs += Kxy_i[a, b] * G_vars[i][row, col]
+
+            rhs = 0.0 if norm_outputs[x_idx] == norm_outputs[y_idx] else 1.0
+            constraints.append(lhs == rhs)
+
+    problem = cp.Problem(cp.Minimize(cp.sum(input_costs)), constraints)
+
+    if solver_kwargs is None:
+        solver_kwargs = {}
+
+    if solver is None:
+        installed = set(cp.installed_solvers())
+        solver = "CLARABEL" if "CLARABEL" in installed else "SCS"
+
+    problem.solve(solver=solver, **solver_kwargs, verbose=True)
+
+    if problem.status not in {cp.OPTIMAL, cp.OPTIMAL_INACCURATE}:
+        raise RuntimeError(f"one-vector direct-sum SDP solve failed with status {problem.status}")
+
+    w_vecs: list[Array] = []
+    block_grams: list[Array] = []
+    witness_dims: list[int] = []
+
+    for i in range(n):
+        q_i = local_oracle_dims[i]
+        G_value = np.asarray(G_vars[i].value, dtype=float)
+        G_value = 0.5 * (G_value + G_value.T)
+
+        R_i = _psd_factor(G_value, tol=psd_factor_tol)
+
+        r_i = R_i.shape[1]
+        witness_dims.append(r_i)
+
+        # w_i[x, :] stores |w_{x,i}> in H_i ⊗ W_i.
+        #
+        # Local private basis ordering:
+        #
+        #     |a>_{H_i} |ell>_{W_i}.
+        w_i = np.zeros((m, q_i * r_i), dtype=float)
+
+        for x_idx in range(m):
+            for a in range(q_i):
+                row = _one_vector_local_component_index(x_idx, a, q_i)
+                start = a * r_i
+                stop = (a + 1) * r_i
+                w_i[x_idx, start:stop] = R_i[row, :]
+
+        w_vecs.append(w_i)
+        block_grams.append(G_value)
+
+    private_dim = int(sum(q_i * r_i for q_i, r_i in zip(local_oracle_dims, witness_dims)))
+
+    return OneVectorDirectSumAdversarySolution(
+        inputs=norm_inputs,
+        outputs=norm_outputs,
+        objective_value=float(problem.value),
+        adversary_cap=float(adv_value + epsilon),
+        status=str(problem.status),
+        w=w_vecs,
+        block_grams=block_grams,
+        alphabet_values=alphabet_values,
+        local_oracles=local_oracles,
+        public_dim=public_dim,
+        local_oracle_dims=local_oracle_dims,
+        witness_dims=witness_dims,
+        private_dim=private_dim,
+    )
+
+
+def build_one_vector_direct_sum_transducer_state_matrices(
+    sol: OneVectorDirectSumAdversarySolution,
+) -> tuple[Array, Array]:
+    """
+    Build source and target columns for the decomposed one-vector transducer.
+
+    source column x:
+
+        |0> ⊕ ⊕_i (O_{x_i} ⊗ I_{W_i}) |w_{x,i}>
+
+    target column x:
+
+        |f(x)> ⊕ ⊕_i |w_{x,i}>.
+    """
+    m = len(sol.inputs)
+    total_dim = sol.public_dim + sol.private_dim
+
+    source = np.zeros((total_dim, m), dtype=complex)
+    target = np.zeros((total_dim, m), dtype=complex)
+
+    for x_idx in range(m):
+        source[0, x_idx] = 1.0
+        target[sol.outputs[x_idx], x_idx] = 1.0
+
+        offset = 0
+
+        for i in range(len(sol.local_oracle_dims)):
+            q_i = sol.local_oracle_dims[i]
+            r_i = sol.witness_dims[i]
+            local_dim = q_i * r_i
+
+            if r_i == 0:
+                after_i = np.zeros(0, dtype=complex)
+            else:
+                Q_i = np.kron(
+                    sol.local_oracles[i][x_idx],
+                    np.eye(r_i, dtype=complex),
+                )
+                after_i = Q_i @ sol.w[i][x_idx].astype(complex)
+
+            sl = slice(sol.public_dim + offset, sol.public_dim + offset + local_dim)
+
+            source[sl, x_idx] = after_i
+            target[sl, x_idx] = sol.w[i][x_idx]
+
+            offset += local_dim
+
+    return source, target
+
+
+def compute_one_vector_direct_sum_transducer_unitary(
+    sol: OneVectorDirectSumAdversarySolution,
+    *,
+    gram_tol: float = 1e-7,
+    eig_tol: float = 1e-9,
+) -> OneVectorDirectSumTransducerUnitary:
+    """
+    Compute input-independent U satisfying
+
+        U( |0> ⊕ ⊕_i (O_{x_i} ⊗ I_{W_i}) |w_{x,i}> )
+            =
+        |f(x)> ⊕ ⊕_i |w_{x,i}>.
+
+    This is the canonical transducer for the decomposed one-vector formulation.
+    """
+    source, target = build_one_vector_direct_sum_transducer_state_matrices(sol)
+
+    U, gram_error, map_error, unitarity_error = unitary_from_state_pairs(
+        source,
+        target,
+        gram_tol=gram_tol,
+        eig_tol=eig_tol,
+    )
+
+    catalyst_norms = []
+
+    for x_idx in range(len(sol.inputs)):
+        norm_sq = 0.0
+
+        for i in range(len(sol.w)):
+            norm_sq += float(np.vdot(sol.w[i][x_idx], sol.w[i][x_idx]).real)
+
+        catalyst_norms.append(norm_sq)
+
+    catalyst_norms_arr = np.asarray(catalyst_norms, dtype=float)
+    adversary_value = float(np.max(catalyst_norms_arr) if catalyst_norms_arr.size else 0.0)
+
+    return OneVectorDirectSumTransducerUnitary(
+        U=U,
+        source_states=source,
+        target_states=target,
+        inputs=sol.inputs,
+        outputs=sol.outputs,
+        w=sol.w,
+        local_oracles=sol.local_oracles,
+        public_dim=sol.public_dim,
+        local_oracle_dims=sol.local_oracle_dims,
+        witness_dims=sol.witness_dims,
+        private_dim=sol.private_dim,
+        catalyst_norms=catalyst_norms_arr,
+        adversary_value=adversary_value,
+        gram_error=gram_error,
+        map_error=map_error,
+        unitarity_error=unitarity_error,
+    )
+
+
+def one_vector_direct_sum_query_for_input(
+    transducer: OneVectorDirectSumTransducerUnitary,
+    x_idx: int,
+) -> Array:
+    """
+    Return the query unitary
+
+        I_public ⊕ ⊕_i (O_{x_i} ⊗ I_{W_i}).
+    """
+    h = transducer.public_dim
+    l = transducer.private_dim
+
+    Q = np.eye(h + l, dtype=complex)
+
+    offset = 0
+
+    for i, q_i in enumerate(transducer.local_oracle_dims):
+        r_i = transducer.witness_dims[i]
+        local_dim = q_i * r_i
+
+        if r_i == 0:
+            Q_i = np.zeros((0, 0), dtype=complex)
+        else:
+            Q_i = np.kron(
+                transducer.local_oracles[i][x_idx],
+                np.eye(r_i, dtype=complex),
+            )
+
+        sl = slice(h + offset, h + offset + local_dim)
+        Q[sl, sl] = Q_i
+
+        offset += local_dim
+
+    return Q
+
+
+def one_vector_direct_sum_transducer_step_for_input(
+    transducer: OneVectorDirectSumTransducerUnitary,
+    x_idx: int,
+) -> Array:
+    """
+    Return
+
+        S_x = U Q_x.
+    """
+    return transducer.U @ one_vector_direct_sum_query_for_input(transducer, x_idx)
+
+
+def verify_one_vector_direct_sum_transduction(
+    transducer: OneVectorDirectSumTransducerUnitary,
+    x_idx: int,
+) -> float:
+    """
+    Verify
+
+        S_x( |0> ⊕ ⊕_i |w_{x,i}> )
+            =
+        |f(x)> ⊕ ⊕_i |w_{x,i}>.
+
+    Returns the residual norm.
+    """
+    Sx = one_vector_direct_sum_transducer_step_for_input(transducer, x_idx)
+
+    initial = np.zeros(transducer.public_dim + transducer.private_dim, dtype=complex)
+    target = np.zeros_like(initial)
+
+    initial[0] = 1.0
+    target[transducer.outputs[x_idx]] = 1.0
+
+    offset = 0
+
+    for i, q_i in enumerate(transducer.local_oracle_dims):
+        r_i = transducer.witness_dims[i]
+        local_dim = q_i * r_i
+
+        sl = slice(transducer.public_dim + offset, transducer.public_dim + offset + local_dim)
+
+        initial[sl] = transducer.w[i][x_idx]
+        target[sl] = transducer.w[i][x_idx]
+
+        offset += local_dim
+
+    return float(la.norm(Sx @ initial - target))
+
+
+def catalyst_norm_bound_one_vector_direct_sum(
+    transducer: OneVectorDirectSumTransducerUnitary,
+) -> float:
+    """
+    Return max_x ||w_x||^2 for the one-vector direct-sum transducer.
+
+    Here
+
+        |w_x> = ⊕_i |w_{x,i}>,
+
+    so
+
+        ||w_x||^2 = sum_i ||w_{x,i}||^2.
+    """
+    if transducer.catalyst_norms.size == 0:
+        return 0.0
+
+    return float(np.max(transducer.catalyst_norms))
+
+
+def show_W_size_one_vector_direct_sum(
+    sol: OneVectorDirectSumAdversarySolution,
+    *,
+    print_report: bool = True,
+) -> dict[str, Any]:
+    """
+    Report witness-space dimensions and transduction complexity for the
+    one-vector direct-sum adversary solution.
+
+    For this construction,
+
+        |w_x> = ⊕_i |w_{x,i}>,
+
+    with
+
+        |w_{x,i}> in H_i ⊗ W_i.
+
+    Therefore
+
+        dim(L_i) = dim(H_i) * dim(W_i),
+
+    and
+
+        dim(L) = sum_i dim(H_i) dim(W_i).
+
+    For Boolean inputs, dim(H_i)=2, so
+
+        dim(L) = 2 * sum_i dim(W_i).
+    """
+    inputs = sol.inputs
+    outputs = sol.outputs
+
+    m = len(inputs)
+    n = len(inputs[0])
+
+    dim_W_i = [int(r) for r in sol.witness_dims]
+    dim_H_query_i = [int(q) for q in sol.local_oracle_dims]
+
+    dim_L_i = [
+        dim_H_query_i[i] * dim_W_i[i]
+        for i in range(n)
+    ]
+
+    dim_L_total = int(sum(dim_L_i))
+    dim_H_public = int(sol.public_dim)
+    dim_H_plus_L = dim_H_public + dim_L_total
+
+    W_x = {}
+
+    for x_idx, x in enumerate(inputs):
+        cost = 0.0
+
+        for i in range(n):
+            cost += np.vdot(sol.w[i][x_idx], sol.w[i][x_idx]).real
+
+        W_x[x] = float(cost)
+
+    W_max = max(W_x.values()) if W_x else 0.0
+
+    report = {
+        "num_inputs_|D|": m,
+        "num_variables_n": n,
+        "local_query_dims": dim_H_query_i,
+        "dim_W_i": dim_W_i,
+        "dim_L_i": dim_L_i,
+        "dim_L_total": dim_L_total,
+        "dim_H_public": dim_H_public,
+        "dim_H_plus_L": dim_H_plus_L,
+        "W_x": W_x,
+        "W_max": W_max,
+        "sum_objective": float(sol.objective_value),
+        "adversary_cap": float(sol.adversary_cap),
+    }
+
+    if print_report:
+        print("One-vector direct-sum witness dimensions:")
+
+        for i in range(n):
+            print(
+                f"  i={i}: "
+                f"dim(H_i)={dim_H_query_i[i]}, "
+                f"dim(W_{i})={dim_W_i[i]}, "
+                f"dim(L_{i})=dim(H_i)*dim(W_i)={dim_L_i[i]}"
+            )
+
+        print()
+        print(f"Total private dimension dim(L) = {dim_L_total}")
+        print(f"Public dimension dim(H) = {dim_H_public}")
+        print(f"Total transducer dimension dim(H ⊕ L) = {dim_H_plus_L}")
+
+        print()
+        print("Transduction complexity by input:")
+
+        for x, val in W_x.items():
+            print(f"  W_{x} = {val:.12g}")
+
+        print()
+        print(f"W_max = {W_max:.12g}")
+        print(f"sum objective = {float(sol.objective_value):.12g}")
+        print(f"adversary cap = {float(sol.adversary_cap):.12g}")
+
+    return report
+
+
+def build_repeated_one_vector_direct_sum_algorithm_for_input(
+    transducer: OneVectorDirectSumTransducerUnitary,
+    x_idx: int,
+    K: int,
+) -> Array:
+    """
+    Build the K-repeat ordinary algorithm for one input index x_idx.
+
+    This returns the unitary on
+
+        (C^K ⊗ H_public) ⊕ L_private.
+
+    It uses the transducer step
+
+        S_x = U Q_x,
+
+    where
+
+        Q_x = I_public ⊕ ⊕_i (O_{x_i} ⊗ I_{W_i}).
+    """
+    Sx = one_vector_direct_sum_transducer_step_for_input(transducer, x_idx)
+
+    return repeated_transducer_algorithm_unitary(
+        Sx,
+        public_dim=transducer.public_dim,
+        private_dim=transducer.private_dim,
+        K=K,
+    )
+
+
+def run_repeated_one_vector_direct_sum_algorithm(
+    transducer: OneVectorDirectSumTransducerUnitary,
+    x_idx: int,
+    K: int,
+    initial_public_state: Array | None = None,
+) -> dict[str, Array | float]:
+    """
+    Simulate the K-repeat algorithm for one input x_idx.
+
+    If initial_public_state is None, the algorithm starts from |0>.
+
+    The first public output slot should approximate |f(x)>.
+    """
+    h = transducer.public_dim
+    l = transducer.private_dim
+
+    if initial_public_state is None:
+        psi = np.zeros(h, dtype=complex)
+        psi[0] = 1.0
+    else:
+        psi = np.asarray(initial_public_state, dtype=complex)
+
+        if psi.shape != (h,):
+            raise ValueError("initial_public_state has incompatible shape")
+
+    A = build_repeated_one_vector_direct_sum_algorithm_for_input(
+        transducer,
+        x_idx,
+        K,
+    )
+
+    init = np.zeros(K * h + l, dtype=complex)
+    init[:h] = psi
+
+    final = A @ init
+
+    output_slot = final[:h]
+    garbage_norm = float(la.norm(final[h:]))
+
+    target = np.zeros(h, dtype=complex)
+    target[transducer.outputs[x_idx]] = 1.0
+
+    target_error = float(la.norm(output_slot - target))
+
+    return {
+        "algorithm_unitary": A,
+        "final_state": final,
+        "output_slot": output_slot,
+        "garbage_norm": garbage_norm,
+        "target_error": target_error,
+        "output_probabilities": np.abs(output_slot) ** 2,
+    }
+
+
+def summarize_one_vector_direct_sum_algorithm(
+    sol: OneVectorDirectSumAdversarySolution,
+    epsilon: float,
+    *,
+    gram_tol: float = 1e-7,
+    eig_tol: float = 1e-9,
+    print_report: bool = True,
+) -> dict[str, Any]:
+    """
+    Convenience wrapper matching the usual workflow:
+
+        transducer = compute_transducer_unitary(sol)
+        W = catalyst_norm_bound(transducer)
+        K = choose_repetition_count(W, epsilon)
+        show_W_size(sol)
+
+    but for the one-vector direct-sum construction.
+    """
+    transducer = compute_one_vector_direct_sum_transducer_unitary(
+        sol,
+        gram_tol=gram_tol,
+        eig_tol=eig_tol,
+    )
+
+    W = catalyst_norm_bound_one_vector_direct_sum(transducer)
+    K = choose_repetition_count(W, epsilon)
+
+    theoretical_error_bound = 2 * np.sqrt(W / K)
+
+    size_report = show_W_size_one_vector_direct_sum(
+        sol,
+        print_report=print_report,
+    )
+
+    report = {
+        "transducer": transducer,
+        "W": W,
+        "K": K,
+        "theoretical_vector_error_bound": float(theoretical_error_bound),
+        "size_report": size_report,
+        "gram_error": transducer.gram_error,
+        "map_error": transducer.map_error,
+        "unitarity_error": transducer.unitarity_error,
+    }
+
+    if print_report:
+        print()
+        print("Algorithm summary:")
+        print(f"sum objective: {sol.objective_value}")
+        print(f"adversary cap: {sol.adversary_cap}")
+        print(f"catalyst W: {W}")
+        print(f"K: {K}")
+        print(f"theoretical vector-error bound <= {theoretical_error_bound}")
+        print(f"Gram error: {transducer.gram_error}")
+        print(f"map error: {transducer.map_error}")
+        print(f"unitarity error: {transducer.unitarity_error}")
+
+    return report
