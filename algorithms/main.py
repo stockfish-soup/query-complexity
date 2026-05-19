@@ -1,7 +1,10 @@
 from adversary_transducer import *
 import qiskit
+from matplotlib import pyplot as plt
+import numpy as np
+from terwilliger_state_conversion import *
 
-n = 4
+n = 3
 k = 2
 
 # OR on n bits
@@ -26,7 +29,7 @@ outputs = [
 
 inputs = all_binary_inputs(n)
 outputs = [int(any(x)) for x in inputs]
-#outputs = [sum(x) >= k for x in inputs]
+outputs = [sum(x) >= k for x in inputs]
 #outputs = [sum(x) == k for x in inputs]
 #outputs = [sum(x) % 2 for x in inputs]
 
@@ -44,8 +47,11 @@ sol = solve_adversary_min_rank(
     inputs,
     outputs,
     solver="MOSEK",
-    psd_factor_tol=0.1**5
-)"""
+    psd_factor_tol=0.1**5,
+    epsilon = 0.1**5
+)
+"""
+
 
 """
 sol = solve_adversary_min_rank_one_vector(
@@ -60,9 +66,53 @@ sol = solve_adversary_min_rank_one_vector_direct_sum(
     outputs,
     solver="MOSEK",
     psd_factor_tol=0.1**5,
+    epsilon = 0.1**5
 )
 
+#show_W_size(sol)
+
+show_W_size_one_vector_direct_sum(sol)
+
+
+
 td = compute_one_vector_direct_sum_transducer_unitary(sol)
+
+print(td.public_dim)
+print(td.catalyst_norms)
+
+S = td.source_states
+T = td.target_states
+
+print(np.linalg.norm((td.U@S-T))) #error
+
+print(td.U)
+
+plt.plot(S,T)
+plt.show()
+
+
+
+"""
+
+for j in range(len(S[0])):
+    input_v = S[:,j]
+    output_v = T[:,j]
+    #print(sol.w[j])
+    #print(input_v)
+    #print(output_v)
+    #plt.plot(range(len(input_v)), input_v)
+    #plt.plot(range(len(input_v)), output_v)
+    #plt.show()
+
+#plt.plot(S,T)
+#plt.show()
+
+print("values:",sol.w)
+    
+"""
+
+
+"""
 
 print("sum objective:", sol.objective_value)
 print("adversary cap:", sol.adversary_cap)
@@ -97,6 +147,8 @@ summary = summarize_one_vector_direct_sum_algorithm(sol, epsilon=0.5)
 transducer = summary["transducer"]
 K = summary["K"]
 
+
+
 for x_idx, x in enumerate(sol.inputs):
     result = run_repeated_one_vector_direct_sum_algorithm(
         transducer,
@@ -111,7 +163,10 @@ for x_idx, x in enumerate(sol.inputs):
     print("target error:", result["target_error"])
     print("garbage norm:", result["garbage_norm"])
 
+"""
 
+
+### FOR TWO VECTORS
 
 
 """
