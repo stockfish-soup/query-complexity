@@ -1,123 +1,70 @@
+# query_complexity_clean
 
-# query-complexity
+A compact rewrite of the uploaded query-complexity codebase. It keeps only the
+space-efficient **phase-oracle one-vector transducer** path.
 
-## Introduction
-#### In this repository, our goal is to implement Semi Definite Programs (SDPs) for the following purposes:
-- Finding the exact **query complexity** complexity for boolean functions.
-- Designing *optimal* **quantum algorithms** for computing these functions.
+## What is kept
 
+- `solve_phase_sdp(...)`: one-vector phase SDP for arbitrary Boolean domains.
+- `solve_symmetric_orbit_sdp(...)`: Terwilliger/orbit-reduced phase SDP for symmetric functions.
+- `solve_symmetric_phase_sdp(...)`: convenience wrapper that solves the orbit SDP and expands to the Boolean input basis.
+- `build_phase_transducer(...)`: extracts the input-independent transducer unitary `U`.
+- `run_phase_algorithm(...)`: simulates the repeated transducer algorithm.
+- `threshold_eta_blocks(...)`: analytic rank-one Schrijver blocks for `THRESHOLD^k_n`.
+- Optional `qiskit_phase_circuit(...)` for dense Qiskit simulation.
 
-## Overview and Sources
+## What was removed
 
-### Polynomial Method
+- direct-sum / bit-flip transducer code;
+- two-vector adversary SDP;
+- primal-only experiments;
+- polynomial-method experiments;
+- duplicate `main.py` scripts;
+- rescaled and triangle-specific variants.
 
-#### - Fran's method
-File : `tensor1.py`
-- https://arxiv.org/abs/2407.13716
+## Quick OR example
 
-#### - Gribling-Laurent SDP
+```python
+import query_complexity as qc
 
-File: `tensor2.py`
-- https://arxiv.org/abs/1901.04921
+sol = qc.analytic_or_solution(3)
+td = qc.build_phase_transducer(sol)
 
-
-### Adversary Method
-
-#### - Primal and Dual (without symmetry reduction)
-
-File: `adversary.py`
-
-- section 6.2.4 and 6.2.5 : https://ir.cwi.nl/pub/32884/32884D.pdf
-
-#### - Symmetry reduced primal
-
-
-File: `adversary_symmetry_reduced.py`
-
-- step 1, 1 1/2 and 2 : https://arxiv.org/abs/1007.2905
-- block diagonalization: https://quantum-journal.org/papers/q-2024-04-30-1318/pdf/ and https://homepages.cwi.nl/~lex/files/codes.pdf
-
-
-## Implementation details
-
-### Polynomail Method
-
-### Adversary Method 
-
-#### - Primal: `adversary_primal()`
-
-Takes as input:
-
-    - `n : int` the size of the input. 
-    - `f_values : dict` the dictionnary containing the input and output values for the function. The inputs are lists of `0` and `1`s (or `-1` and `1`s), the input are `0` or `1` (could also be `-1` and `1`).
-    - `solver` the name of the solver, SCS by default.
-    - `verbose` as parameter for the solver
-
-Outputs:
-
-
-For a better implementation, we used the following reformulation (as shown in Arjan's thesis, Section 6.2.4).
-
-
-
-Let $f : \mathcal{D} \to {0,1}$, with $\mathcal{D} \subseteq {0,1}^n$. Then $\mathrm{ADV}^{\pm}(f)$ is the optimal value of:
-
-```math
-\max \sum_{x,y \in \mathcal{D}} \Gamma[x,y]
+print("objective:", sol.objective_value)
+print("private dim:", td.private_dim)
+print("map error:", td.map_error)
+qc.show_catalysts(sol)
 ```
 
-subject to:
+## Symmetric SDP example
 
-```math
-\text{diag}(\beta) - \Gamma \circ \Delta_j \succeq 0 \quad \forall j \in [n]
+```python
+import query_complexity as qc
+
+n, k = 4, 2
+sol = qc.solve_symmetric_phase_sdp(
+    n,
+    qc.THRESHOLD_layers(n, k),
+    solver="MOSEK",          # or omit to use an installed default
+    epsilon=1e-5,
+    psd_tol=1e-5,
+)
+
+td = qc.build_phase_transducer(sol)
+print("objective:", sol.objective_value)
+print("rank dims:", sol.witness_dims)
+print("private dim:", td.private_dim)
 ```
 
-```math
-\Gamma[x,y] = 0 \quad \forall x,y \in \mathcal{D} \text{ with } f(x)=f(y)
+## Analytic threshold block example
+
+```python
+import query_complexity as qc
+
+blocks = qc.threshold_eta_blocks(4, 2)
+for r, data in blocks.items():
+    print("r =", r)
+    print("labels =", data["labels"])
+    print("eta =", data["eta"])
+    print("B rank =", 1 if data["eta"].any() else 0)
 ```
-
-```math
-\sum_{x \in f^{-1}(1)} \beta[x] = \tfrac{1}{2}
-```
-
-```math
-\sum_{y \in f^{-1}(0)} \beta[y] = \tfrac{1}{2}
-```
-
-
-
-#### - Dual: `adversary_dual()`
-
-Takes as input:
-
-    - `n : int` the size of the input. 
-    - `f_values : dict` the dictionnary containing the input and output values for the function. The inputs are lists of `0` and `1`s (or `-1` and `1`s), the input are `0` or `1` (could also be `-1` and `1`).
-    - `solver` the name of the solver, SCS by default.
-    - `verbose` as parameter for the solver
-
-Outputs:
-
-
-We use the version shown in Arjan's thesis, Section 6.2.5.
-
-Let $f : \mathcal{D} \to {0,1}$, with $\mathcal{D} \subseteq {0,1}^n$. Then $\mathrm{ADV}^{\pm}(f)$ is the optimal value of:
-
-```math
-\min \max_{x \in \mathcal{D}} \sum_{j=1}^n X_j[x,x]
-```
-
-subject to:
-
-```math
-\sum_{\substack{j=1 \\ x_j \neq y_j}}^n X_j[x,y] = 1 \quad \forall x,y \in \mathcal{D},\ f(x) \neq f(y)
-```
-
-```math
-X_j \succeq 0 \quad \forall j \in [n]
-```
-
-where $X_1, \ldots, X_n \in \mathbb{R}^{\mathcal{D} \times \mathcal{D}}$ are positive semidefinite matrices.
-
-
-
-
