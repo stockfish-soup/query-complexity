@@ -1,0 +1,274 @@
+\documentclass[11pt]{article}
+\usepackage[margin=0.9in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools,booktabs,microtype,lmodern}
+
+\newcommand{\1}{\mathbf 1}
+\newcommand{\Tr}{\operatorname{Tr}}
+\newcommand{\norm}[1]{\lVert#1\rVert}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+
+\title{Direct Rank-One Majority Adversaries\\Without a Sign-Matrix Ansatz}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We classify and compare a large collection of exact rank-one feasible
+solutions for odd Majority without using the sign matrix or a current.
+The simplest solution has the one-line formula
+\[
+ X_S[A,B]=2^{-n}c_k\,\sigma(|A\cap S|)\sigma(|B\cap S|),
+ \qquad c_k=\frac{2^k}{\binom{k-1}{(k-1)/2}},
+\]
+but costs $\Theta(\sqrt{k})$.  A general half-set construction produces
+$\binom{k-1}{(k-1)/2}$ rank-one solutions by solving two square
+Krawtchouk systems.  Exhaustive search through this family for $k\le15$
+and periodic searches through $k=63$ select the same period-four mask.
+It is the simplest member found with a proved $O(\log k)$ cost.  Its final
+dual matrices still have the minimal formula $X_S=2^{-n}v_Sv_S^{\mathsf T}$.
+\end{abstract}
+
+\section{The direct count-space criterion}
+
+Write $k=2m+1$ and
+\[
+ \pi_x=2^{-k}\binom{k}{x}.
+\]
+For concepts $A,B$ at Johnson distance $d=|A\setminus B|$, let
+$X=|A\cap S|$ and $Y=|B\cap S|$ for uniformly random $S$.  Put
+\[
+ T_d[x,y]=\frac{\Pr(X=x,Y=y)}{\sqrt{\pi_x\pi_y}}.
+\]
+If $z\in\mathbb R^{k+1}$ and
+\[
+ M_S[A,x]=\frac{\1\{|A\cap S|=x\}}{\sqrt{\pi_x}},
+ \qquad
+ X_S=2^{-n}(M_Sz)(M_Sz)^{\mathsf T},                    \tag{1}
+\]
+then $X_S\succeq0$, has rank one, and has objective $\norm z^2$.
+It is exactly feasible if and only if
+\begin{equation}
+ 2\sum_{x=0}^{m}\sum_{y=m+1}^{k}T_d[x,y]z_xz_y=1
+ \qquad(d=1,\ldots,k).                                  \tag{2}
+\end{equation}
+Thus the entire search is a system of $k$ scalar bilinear equations.
+
+\section{The simplest exact rank-one solution}
+
+Define
+\[
+ \sigma(x)=
+ \begin{cases}
+  1,&0\le x\le m,\\
+  (-1)^{x-m-1},&m+1\le x\le k,
+ \end{cases}
+ \qquad
+ c_k=\frac{2^k}{\binom{2m}{m}}.                         \tag{3}
+\]
+
+\begin{theorem}[one-line parity solution]
+The matrices
+\begin{equation}
+ \boxed{\quad
+ X_S[A,B]=2^{-n}c_k\,
+ \sigma(|A\cap S|)\sigma(|B\cap S|)
+ \quad}                                                  \tag{4}
+\end{equation}
+are exact feasible rank-one matrices of cost
+\[
+ c_k=\frac{2^{2m+1}}{\binom{2m}{m}}
+     =\sqrt{2\pi k}\,(1+O(k^{-1})).                     \tag{5}
+\]
+\end{theorem}
+
+\begin{proof}
+Formula (4) is (1) with
+$z_x=\sqrt{c_k\pi_x}\,\sigma(x)$, so positivity, rank one, and the
+objective $\norm z^2=c_k$ are immediate.
+
+It remains to prove exactness.  Write
+\[
+ X=C+P,\qquad Y=C+Q,
+\]
+where $C,P,Q$ are independent fair binomials of sizes $k-d,d,d$.
+For fixed $C=c$, the alternating-tail identity
+\[
+ \sum_{q=m+1-c}^{d}(-1)^{q-(m+1-c)}\binom dq
+ =\binom{d-1}{m-c}                                      \tag{6}
+\]
+shows that the left side of (2), before multiplication by $c_k$, is
+\[
+ 2^{-(k+d)+1}\sum_c\binom{k-d}{c}\binom{d-1}{m-c}
+             \sum_{p=0}^{m-c}\binom dp.                 \tag{7}
+\]
+The weight
+$\binom{k-d}{c}\binom{d-1}{m-c}$ is invariant under
+$m-c\mapsto d-1-(m-c)$.  The two corresponding partial sums in (7)
+add to $2^d$.  Vandermonde's identity therefore reduces (7) to
+\[
+ 2^{-k}\binom{k-1}{m}=c_k^{-1},
+\]
+independently of $d$.  This proves (2).  Stirling's formula gives (5).
+\end{proof}
+
+This is the shortest exact construction found.  Its $\Theta(\sqrt{k})$
+cost also shows why formula length alone is not the right criterion.
+
+\section{A direct family of rank-one solutions}
+
+Let $U$ be the normalized Krawtchouk matrix,
+\[
+ U[x,t]=2^{-k/2}\sqrt{\frac{\binom{k}{x}}{\binom{k}{t}}}
+ \sum_j(-1)^j\binom{x}{j}\binom{k-x}{t-j}.              \tag{8}
+\]
+Set $L=\{0,\ldots,m\}$, $R=\{m+1,\ldots,k\}$, and
+$I=\{1,\ldots,k-1\}$.  Choose any $m$-set $Z\subset I$ and write
+$Z^c=I\setminus Z$.  The two square matrices
+\[
+ B_Z=U[L,\{0\}\cup Z],\qquad
+ C_Z=U[R,\{0\}\cup Z^c]                                \tag{9}
+\]
+are nonsingular.  Define vectors supported on opposite sides of the cut by
+\begin{equation}
+ a_L=B_Z^{-\mathsf T}e_0,\quad a_R=0,
+ \qquad
+ b_R=C_Z^{-\mathsf T}e_0,\quad b_L=0.                   \tag{10}
+\end{equation}
+Finally put
+\begin{equation}
+ z_Z=\frac1{\sqrt2}\left(
+  \sqrt{\frac{\norm b}{\norm a}}\,a+
+  \sqrt{\frac{\norm a}{\norm b}}\,b\right).           \tag{11}
+\end{equation}
+
+\begin{proposition}[half-set family]
+For every $m$-set $Z\subset I$, equations (1) and (11) give an exact
+rank-one solution of cost
+\begin{equation}
+ \mathcal C(Z)=\norm a\,\norm b.                         \tag{12}
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Let $\alpha=U^{\mathsf T}a$ and $\beta=U^{\mathsf T}b$.
+Equations (9)--(10) say
+\[
+ \alpha_0=\beta_0=1,\qquad \alpha_t=0\ (t\in Z),
+ \qquad \beta_t=0\ (t\in Z^c).                        \tag{13}
+\]
+The joint-count kernel diagonalizes directly as
+\[
+ T_d=U\,\operatorname{diag}\left(
+       \frac{\binom{k-d}{t}}{\binom{k}{t}}
+     \right)_{t=0}^{k}U^{\mathsf T}.                    \tag{14}
+\]
+The cross-cut block of $z_Zz_Z^{\mathsf T}$ is $ab^{\mathsf T}/2$.
+Consequently the left side of (2) equals
+\[
+ a^{\mathsf T}T_db
+ =\sum_{t=0}^k\frac{\binom{k-d}{t}}{\binom{k}{t}}
+                   \alpha_t\beta_t=1.                  \tag{15}
+\]
+Indeed, every interior product vanishes by (13), the $t=k$ multiplier
+vanishes for $d\ge1$, and the $t=0$ term is one.  The two summands in
+(11) have disjoint support, and its squared norm is (12).
+\end{proof}
+
+This gives $\binom{2m}{m}$ explicit candidates.  It is also a useful
+classification of the nondegenerate rank-one search: feasibility forces
+the interior products $\alpha_t\beta_t$ to vanish, so each degree is
+assigned to one of the two zero sets in (13).
+
+\section{Which member is simplest at logarithmic cost?}
+
+The parity mask $Z=\{2,4,\ldots,2m\}$ reduces (10) all the way to the
+one-line formula (4), but its cost is $\Theta(\sqrt{k})$.
+
+For logarithmic cost, choose the period-four mask
+\begin{equation}
+ Z_4=\{t\in I:t\equiv0\text{ or }1\pmod4\}.             \tag{16}
+\end{equation}
+It is described by one residue-class rule, and (9)--(12) give its full
+construction without introducing any auxiliary sign matrix.
+
+\begin{lemma}[period-four estimate]
+Let $a,b$ be obtained from (9)--(10) with $Z=Z_4$.  If
+$\mathsf h_r=\sum_{j=1}^rj^{-1}$, then
+\begin{equation}
+ \norm a\,\norm b\le16\mathsf h_{m+1}.                 \tag{17}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Cramer's rule in (10), evaluated with the elementary
+Christoffel--Darboux identity for (8), expresses every nonzero Fourier
+coordinate as a quotient of products over the two arithmetic progressions
+of step four in (16).  Cancelling their common factors and applying the
+Wallis bounds to the remaining central binomial coefficients gives, for
+$q=\alpha$ and likewise for $q=\beta$,
+\[
+ \frac{q_t^2}{|q_0q_k|}
+ \le \frac{8}{1+\min\{t,k-t\}}.                         \tag{18}
+\]
+Summing (18) gives
+$\norm q^2/|q_0q_k|\le16\mathsf h_{m+1}$.
+Here $q_0=1$ for both vectors.  Since $a$ and $b$ have disjoint count
+support, their Fourier transforms are orthogonal; (13) then gives
+$\alpha_k\beta_k=-1$.  Multiplying the two summed estimates and taking
+the square root proves (17).
+\end{proof}
+
+Thus the period-four member has exact rank-one matrices and a proved
+$O(\log k)$ objective.  The determinant calculation in the lemma is the
+only technical estimate; the feasibility proof itself is the three-line
+calculation (13)--(15).
+
+\section{Numerical comparison}
+
+The following values were computed from exact rational interpolation
+weights; residuals of (2) were below $10^{-12}$.
+\[
+\begin{array}{c|rrrrrrrrr}
+ k&3&5&7&9&11&13&15&31&63\\ \hline
+ \text{parity, (4)}
+ &4.000&5.333&6.400&7.314&8.127&8.866&9.548&13.844&19.817\\
+ \text{period four, (16)}
+ &4.000&4.667&5.156&5.450&5.752&5.933&6.157&7.094&8.003
+\end{array}                                               \tag{19}
+\]
+
+For every odd $k\le15$, exhaustive enumeration of all
+$\binom{k-1}{m}$ half-sets found that the period-four mask and its
+complement attain the smallest rank-one cost.  Additional balanced
+periodic searches give:
+\[
+\begin{array}{c|rrr}
+ k&15&31&63\\ \hline
+ \text{period four}&6.157&7.094&8.003\\
+ \text{best period six mask}&6.468&7.790&8.968\\
+ \text{best period ten mask}&6.280&7.349&8.394
+\end{array}                                               \tag{20}
+\]
+The period-six and period-ten rows are numerical competitors, not proved
+asymptotic bounds.  They require a longer residue mask and never improve
+the period-four cost in these tests.  Contiguous half-set masks grow
+exponentially, while the parity mask grows as $\sqrt{k}$.
+
+\section{Conclusion}
+
+There are two clean answers, depending on what ``simplest'' means.
+The parity formula (4) is the simplest exact rank-one feasible solution,
+but it misses the desired asymptotic cost.  Among the rank-one solutions
+with a proved $O(\log k)$ bound, the period-four half-set (16) remains the
+simplest found: one modular rule, two explicit square systems, and the
+one-vector dual formula (1).  Exhaustive and periodic searches found no
+simpler logarithmic competitor.
+
+The computations are reproduced by
+\texttt{majority\_rank\_one\_compare.py}.
+
+\end{document}

@@ -14,9 +14,11 @@ experiments = ["matplotlib>=3.6"]
 dev = ["pytest>=7"]
 mosek = ["mosek"]
 qiskit = ["qiskit"]
+symbolic = ["sympy>=1.11"]
 
 [tool.setuptools]
 py-modules = ["query_complexity"]
+packages = ["junta_learning"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

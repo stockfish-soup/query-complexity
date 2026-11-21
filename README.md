@@ -9,6 +9,8 @@ and graph collision.
 
 | Path | Purpose |
 | --- | --- |
+| `junta_learning/` | Intersection-free junta learning SDPs and explicit logarithmic-cost majority witnesses |
+| `docs/junta/` | Optimization derivations and majority proof notes |
 | `query_complexity.py` | Python library and existing public import |
 | `examples/` | Small examples and Python API guide |
 | `experiments/` | Convex and fixed-rank query/space searches |
@@ -52,6 +54,23 @@ python ../../plots/plot_alpha_min_rank_curves.py
 
 Fixed-rank feasibility searches are nonconvex: a verified candidate certifies
 feasibility, while failure to find one does not certify infeasibility.
+
+## Junta learning and the logarithmic majority witness
+
+The [junta-learning guide](junta_learning/README.md) contains the
+intersection-free count SDP, equivalent nuclear-norm optimization, rank-one
+half-set search, explicit period-four `O(log k)` majority witness, mixed-size
+SDP, and general symmetric multi-bias optimizer.
+
+```bash
+python -m junta_learning.majority_sdp --ks 1 3 5 7
+python -m junta_learning.rank_one --ks 3 7 15 31 --exact
+python -m junta_learning.bounded_size --ks 1 2 3 --details
+```
+
+The explicit witness has a proved logarithmic cost; the observed `4/pi`
+leading coefficient is numerical. The guide explains the discovery sequence,
+normalization, and how to recover the full rank-one matrices.
 
 ## Julia: triangle finding with SymbolicWedderburn
 

@@ -1,0 +1,303 @@
+\documentclass[11pt]{article}
+\usepackage[margin=0.88in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools,booktabs}
+
+\newcommand{\R}{\mathbb R}
+\newcommand{\1}{\mathbf 1}
+\newcommand{\Tr}{\operatorname{Tr}}
+\newcommand{\norm}[1]{\lVert#1\rVert}
+\newcommand{\ip}[2]{\langle #1,#2\rangle}
+\newcommand{\diag}{\operatorname{diag}}
+\newtheorem{proposition}{Proposition}
+
+\title{Which Optimization Produced the Rank-One Majority Witness?\\
+The SDP, the Half-Set Search, and the Numerical $4/\pi$ Law}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+For odd $k$, this note records the precise optimization path leading to the
+period-four rank-one feasible family for Majority.  The convex symmetric SDP
+is a trace-minimization problem, equivalently a nuclear-norm problem for the
+cross-cut block.  It is useful as a benchmark, but its optimizer is generally
+not rank one.  Imposing rank one gives a nonconvex bilinear program.  In the
+Krawtchouk basis its $k$ feasibility equations become coordinatewise
+complementarity, reducing the search to a finite optimization over half-sets
+of Fourier degrees.  Exhaustive and periodic searches select the period-four
+half-set.  Exact evaluation of that explicit witness gives
+$\mathcal C_k-(4/\pi)\log k\approx2.733$.
+
+The logical qualification is important: the current written proof certifies
+$\mathcal C_k=O(\log k)$, while the coefficient $4/\pi$ is a very stable
+numerical asymptotic of the explicit rank-one formula.  It was not obtained
+as the certified optimum value of a separate SDP.
+\end{abstract}
+
+\section{The short answer}
+
+The calculation had the following order:
+\[
+\begin{gathered}
+\boxed{\text{symmetric PSD SDP}}
+\ \longrightarrow\
+\boxed{\text{rank-one bilinear restriction}}
+\ \longrightarrow\
+\boxed{\text{Fourier half-set optimization}}\\[2mm]
+\longrightarrow\
+\boxed{Z_4=\{0,1\}\pmod 4}
+\ \longrightarrow\
+\boxed{\mathcal C_k\sim\tfrac4\pi\log k\ \text{numerically}}.
+\end{gathered}
+\]
+Thus the optimization that actually produced the rank-one formula was the
+half-set problem \eqref{eq:halfset-program} below.  The SDP in
+\eqref{eq:count-sdp}, or its nuclear-norm form \eqref{eq:nuclear}, motivated
+and benchmarked the search, but did not itself return the period-four
+rank-one solution.  The value $4/\pi$ was recognized only after exact costs
+of the period-four member were evaluated for large $k$.
+
+\section{From the dual adversary SDP to a $(k+1)$-dimensional SDP}
+
+Let $k=2m+1$.  Concepts are $k$-sets $A$, queries are subsets $S$, and
+$f_A(S)$ is the Majority label determined by $|A\cap S|$.  The starting dual
+adversary program is
+\begin{equation}
+ \begin{aligned}
+ \text{minimize}\quad & \max_A\sum_S X_S[A,A],\\
+ \text{subject to}\quad &X_S\succeq0,\\
+ &\sum_{S:f_A(S)\ne f_B(S)}X_S[A,B]=1
+       \qquad(A\ne B).
+ \end{aligned}                                           \tag{D}\label{eq:dual}
+\end{equation}
+
+Put
+\[
+ \pi_x=2^{-k}\binom{k}{x},\qquad L=\{0,\ldots,m\},
+ \qquad R=\{m+1,\ldots,k\}.
+\]
+If two concepts are at Johnson distance $d=|A\setminus B|$, define their
+normalized joint-count kernel
+\begin{equation}
+ T_d[x,y]=\frac{\Pr\{|A\cap S|=x,\ |B\cap S|=y\}}
+                 {\sqrt{\pi_x\pi_y}}.                   \label{eq:kernel}
+\end{equation}
+Equivalently, if $C,P,Q$ are independent fair binomials of sizes
+$k-d,d,d$, then the numerator is $\Pr(C+P=x,C+Q=y)$.
+
+Permutation symmetrization reduces \eqref{eq:dual} to the count-space SDP
+\begin{equation}
+ \boxed{
+ \begin{aligned}
+  \text{minimize}\quad &\Tr G,\\
+  \text{subject to}\quad&G\in\mathbb S_+^{k+1},\\
+  &2\ip{T_d[L,R]}{G[L,R]}_F=1,\qquad d=1,\ldots,k .
+ \end{aligned}}                                         \tag{P$_k$}\label{eq:count-sdp}
+\end{equation}
+This is the concrete SDP implemented in
+\texttt{majority\_direct\_count\_sdp.py}.
+
+It has an exact cross-block reformulation.  Write $Q=G[L,R]$.  The minimum
+trace of a PSD matrix with prescribed off-diagonal block $Q$ equals
+$2\norm{Q}_*$.  Indeed, if $Q=U\Sigma V^{\mathsf T}$, the completion
+\[
+ \begin{pmatrix}U\Sigma U^{\mathsf T}&Q\\
+ Q^{\mathsf T}&V\Sigma V^{\mathsf T}\end{pmatrix}
+ =\begin{pmatrix}U\\V\end{pmatrix}\Sigma
+  \begin{pmatrix}U\\V\end{pmatrix}^{\!\mathsf T}
+\]
+is PSD and has trace $2\Tr\Sigma$; the reverse inequality is the standard
+PSD block/nuclear-norm inequality.  Hence \eqref{eq:count-sdp} is equivalent
+to
+\begin{equation}
+ \boxed{
+ \begin{aligned}
+  \text{minimize}\quad&2\norm Q_*,\\
+  \text{subject to}\quad&2\ip{T_d[L,R]}Q_F=1,
+                   \qquad d=1,\ldots,k .
+ \end{aligned}}                                         \tag{N$_k$}\label{eq:nuclear}
+\end{equation}
+
+This convex program does not explain rank one by itself.  For example, its
+numerical cross-block ranks for $k=3,5,7,9$ are respectively $2,3,3,4$
+(at a relative singular-value cutoff of $10^{-7}$).  Rank one therefore has
+to be imposed as additional structure.
+
+\section{The actual rank-one optimization}
+
+Write a rank-one PSD variable as $G=zz^{\mathsf T}$ with
+$z=(u,v)\in\R^L\oplus\R^R$.  Program \eqref{eq:count-sdp} becomes
+\begin{equation}
+ \begin{aligned}
+ \text{minimize}\quad&\norm{u}^2+\norm{v}^2,\\
+ \text{subject to}\quad&2u^{\mathsf T}T_d[L,R]v=1,
+                         \qquad d=1,\ldots,k .
+ \end{aligned}                                          \tag{R$_k$}\label{eq:rankone}
+\end{equation}
+This is a nonconvex quadratically constrained problem.  Rescaling
+$(u,v)\mapsto(cu,c^{-1}v)$ and minimizing over $c>0$ gives an equivalent
+scale-invariant form.  It is convenient to write
+\begin{equation}
+ u=\sqrt{\frac{\norm b}{2\norm a}}\,a,
+ \qquad
+ v=\sqrt{\frac{\norm a}{2\norm b}}\,b .               \label{eq:balance}
+\end{equation}
+Then the program is exactly
+\begin{equation}
+ \boxed{
+ \begin{aligned}
+ \text{minimize}\quad&\norm a\,\norm b,\\
+ \text{subject to}\quad&a^{\mathsf T}T_d b=1,
+                         \qquad d=1,\ldots,k,\\
+ &\operatorname{supp}(a)\subseteq L,
+ \quad \operatorname{supp}(b)\subseteq R.
+ \end{aligned}}                                         \tag{B$_k$}\label{eq:bilinear}
+\end{equation}
+Here $a,b$ are viewed as $(k+1)$-vectors after zero extension.  Its objective
+is precisely $\norm z^2=\norm a\norm b$.
+
+\section{Why the bilinear equations become a half-set search}
+
+Let $U$ be the orthogonal normalized Krawtchouk matrix,
+\[
+ U[x,t]=2^{-k/2}\sqrt{\frac{\binom{k}{x}}{\binom{k}{t}}}
+ \sum_j(-1)^j\binom{x}{j}\binom{k-x}{t-j}.
+\]
+The kernels diagonalize simultaneously:
+\begin{equation}
+ T_d=U\diag\!\left(
+ \frac{\binom{k-d}{t}}{\binom{k}{t}}
+ \right)_{t=0}^kU^{\mathsf T}.                          \label{eq:diagonalization}
+\end{equation}
+Set $\alpha=U^{\mathsf T}a$ and $\beta=U^{\mathsf T}b$.  Because the
+functions $d\mapsto\binom{k-d}{t}/\binom{k}{t}$ for $0\le t<k$ are
+triangularly independent, all $k$ equations in \eqref{eq:bilinear} are
+equivalent to
+\begin{equation}
+ \alpha_0\beta_0=1,\qquad
+ \alpha_t\beta_t=0\quad(1\le t\le k-1).               \label{eq:complementarity}
+\end{equation}
+The $t=k$ multiplier vanishes for every $d\ge1$.  Moreover
+$a^{\mathsf T}b=0$ because the count supports are disjoint, so
+$\alpha_k\beta_k=-1$ follows automatically.
+
+Normalize $\alpha_0=\beta_0=1$.  In a nondegenerate solution each interior
+degree must therefore be assigned to one of two zero sets.  Choose an
+$m$-element set $Z\subset I:=\{1,\ldots,k-1\}$ and let $Z^c=I\setminus Z$.
+Define the square Krawtchouk submatrices
+\[
+ B_Z=U[L,\{0\}\cup Z],\qquad
+ C_Z=U[R,\{0\}\cup Z^c]
+\]
+and
+\begin{equation}
+ a_L=B_Z^{-\mathsf T}e_0,\quad a_R=0,\qquad
+ b_R=C_Z^{-\mathsf T}e_0,\quad b_L=0.                  \label{eq:ab}
+\end{equation}
+Then $\alpha_0=\beta_0=1$, $\alpha_t=0$ on $Z$, and $\beta_t=0$ on
+$Z^c$, so \eqref{eq:complementarity} holds.  The continuous rank-one search
+has consequently reduced to the finite optimization
+\begin{equation}
+ \boxed{
+ \min_{\substack{Z\subset\{1,\ldots,k-1\}\\|Z|=m}}
+ \mathcal C(Z),\qquad
+ \mathcal C(Z)=\norm{B_Z^{-\mathsf T}e_0}\,
+                \norm{C_Z^{-\mathsf T}e_0}.}           \tag{H$_k$}\label{eq:halfset-program}
+\end{equation}
+This is the optimization implemented with exact rational interpolation
+weights in the accompanying script
+\[
+ \texttt{majority\_rank\_one\_search.py}.
+\]
+
+\section{How the period-four formula emerged}
+
+Exhaustive evaluation of \eqref{eq:halfset-program} for every odd
+$k\le15$ selected, up to reflection and complementation,
+\begin{equation}
+ \boxed{Z_4=\{t:1\le t\le k-1,\ t\equiv0\text{ or }1\pmod4\}.}             \label{eq:period4}
+\end{equation}
+Searches over balanced periodic masks of periods $6$ and $10$ through
+$k=63$ did not improve it.  Thus the simple residue-class description was a
+pattern discovered in the exact half-set optimization; it was then promoted
+to a formula valid for every odd $k$.
+
+For completeness, the resulting query matrices have the one-vector form
+\begin{equation}
+ \boxed{X_S=2^{-n}(M_Sz)(M_Sz)^{\mathsf T},\qquad
+ M_S[A,x]=\frac{\1\{|A\cap S|=x\}}{\sqrt{\pi_x}},}      \label{eq:XS}
+\end{equation}
+where $a,b$ are given by \eqref{eq:ab} with $Z=Z_4$, and $z=(u,v)$ is
+given by \eqref{eq:balance}.  Hence every $X_S$ is visibly PSD and rank one.
+Equations \eqref{eq:diagonalization}--\eqref{eq:complementarity} prove all
+feasibility constraints, and the objective is $\mathcal C(Z_4)$.
+
+The inverses in \eqref{eq:ab} can be removed entirely.  Cauchy interpolation
+expresses the nonzero Fourier entries as finite products over the two
+step-four progressions.  Those are the explicit product formulas used by the
+exact-arithmetic evaluator and in the written $O(\log k)$ proof.
+
+\section{Origin of the $4/\pi$ coefficient}
+
+The exact period-four cost was evaluated as a rational number squared, with
+only the final square root rounded.  For $k\equiv3\pmod4$ the results are:
+\begin{center}
+\begin{tabular}{rcc}
+\toprule
+$k$&$\mathcal C_k$&$\mathcal C_k-(4/\pi)\log k$\\
+\midrule
+31   & 7.094145520 & 2.721857215\\
+63   & 8.002838568 & 2.727635595\\
+127  & 8.898138883 & 2.730328322\\
+255  & 9.786974808 & 2.731618934\\
+511  &10.672640712 & 2.732248334\\
+1023 &11.556738512 & 2.732558512\\
+2047 &12.440056881 & 2.732712325\\
+4095 &13.322986795 & 2.732788875\\
+\bottomrule
+\end{tabular}
+\end{center}
+A least-squares fit of $\mathcal C_k=A\log k+B$ on these eight points gives
+\begin{equation}
+ A=1.27510935,\qquad B=2.71921682,\qquad
+ \frac4\pi=1.27323954.                                  \label{eq:fit}
+\end{equation}
+More tellingly, the third column stabilizes rapidly.  This led to the
+empirical law
+\begin{equation}
+ \boxed{\mathcal C_k=\frac4\pi\log k+c+o(1),
+ \qquad c\approx2.7329.}                                \label{eq:conjecture}
+\end{equation}
+
+The status of \eqref{eq:conjecture} should not be overstated.  The finite
+products for the period-four vector, combined with Wallis and Gautschi
+bounds, currently give the rigorous estimate
+\begin{equation}
+ \mathcal C_k\le16H_{m+1}=O(\log k).                    \label{eq:proved}
+\end{equation}
+They do not yet give the sharp leading constant $4/\pi$.  A proof of that
+constant would require a sharp asymptotic evaluation of the four
+Gamma-product residue classes, with a summable error uniform from the bulk
+to both endpoints.  In particular, the honest provenance is:
+\[
+ \text{half-set search}\Rightarrow Z_4
+ \Rightarrow \text{exact cost data}\Rightarrow 4/\pi\text{ conjecture},
+\]
+not ``an SDP solver certified the coefficient $4/\pi$.''
+
+\section{Reproduction}
+
+From the \texttt{majority} directory, the relevant computations are
+\begin{verbatim}
+python3 majority_direct_count_sdp.py --ks 3 5 7 9
+python3 majority_rank_one_search.py --ks 3 5 7 9 11 13 15 --exhaustive
+python3 majority_rank_one_search.py --ks 31 63 127 255 511 1023 2047 4095
+\end{verbatim}
+The first command solves the convex SDP/nuclear-norm benchmark.  The second
+performs the half-set search that identifies the period-four mask.  The third
+evaluates its explicit exact-arithmetic formula at large $k$; regressing those
+values produces \eqref{eq:fit}.
+
+\end{document}
