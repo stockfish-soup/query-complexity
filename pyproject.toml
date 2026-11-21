@@ -18,7 +18,7 @@ symbolic = ["sympy>=1.11"]
 
 [tool.setuptools]
 py-modules = ["query_complexity"]
-packages = ["junta_learning"]
+packages = ["junta_learning", "sdp_hierarchy"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

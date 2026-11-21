@@ -9,6 +9,7 @@ and graph collision.
 
 | Path | Purpose |
 | --- | --- |
+| `sdp_hierarchy/` | General permutation-action irrep-prefix hierarchy and symmetric-function examples |
 | `junta_learning/` | Intersection-free junta learning SDPs and explicit logarithmic-cost majority witnesses |
 | `docs/junta/` | Optimization derivations and majority proof notes |
 | `query_complexity.py` | Python library and existing public import |
@@ -71,6 +72,22 @@ python -m junta_learning.bounded_size --ks 1 2 3 --details
 The explicit witness has a proved logarithmic cost; the observed `4/pi`
 leading coefficient is numerical. The guide explains the discovery sequence,
 normalization, and how to recover the full rank-one matrices.
+
+## General irrep-prefix SDP hierarchy
+
+The [hierarchy guide](sdp_hierarchy/README.md) defines a finite-action pipeline
+with intersection-free level 0, whole-irrep prefix restrictions, multiplicity
+PSD blocks, independent reference formulations, and numerical validation.
+It includes symmetric Boolean evaluation and symmetric-junta identification.
+
+```bash
+python experiments/experiment_irrep_hierarchy.py
+```
+
+For three-bit majority, level 0 costs 3 and the next level costs 2, matching
+the full SDP. The enumerative backend targets small instances; the guide
+specifies the stabilizer ordering, normalization, and relationship to the
+earlier common-bias junta SDP.
 
 ## Julia: triangle finding with SymbolicWedderburn
 
