@@ -1,0 +1,89 @@
+n,k,alpha,method,rank_bound,rank_X_i,coordinate_ranks,trace,feasible,max_equality_residual,max_cap_violation,status,attempts,total_nfev
+4,1,1.0,convex_symmetric,,1,1,9.58332561663234,True,,,optimal; first_pass=provided,,
+4,1,1.0,convex_nonsymmetric,,1,1;1;1;1,9.583325751754842,True,,,optimal,,
+4,1,1.0,fixed_rank_nonsymmetric,1,1,1;1;1;1,9.583325750008585,True,1.1102230246251565e-16,0.0,feasible,1,4
+4,1,1.02,convex_symmetric,,1,1,9.435025325773637,True,,,optimal; first_pass=provided,,
+4,1,1.02,convex_nonsymmetric,,1,1;1;1;1,9.435025419622425,True,,,optimal,,
+4,1,1.02,fixed_rank_nonsymmetric,1,1,1;1;1;1,9.583325750008585,True,1.1102230246251565e-16,0.0,feasible,1,3
+4,1,1.04,convex_symmetric,,1,1,9.293198078745394,True,,,optimal; first_pass=provided,,
+4,1,1.04,convex_nonsymmetric,,1,1;1;1;1,9.293198154685133,True,,,optimal,,
+4,1,1.04,fixed_rank_nonsymmetric,1,1,1;1;1;1,9.583325750008585,True,1.1102230246251565e-16,0.0,feasible,1,3
+4,1,1.06,convex_symmetric,,1,1,9.157477579923253,True,,,optimal; first_pass=provided,,
+4,1,1.06,convex_nonsymmetric,,1,1;1;1;1,9.157477635982216,True,,,optimal,,
+4,1,1.06,fixed_rank_nonsymmetric,1,1,1;1;1;1,9.583325750008585,True,1.1102230246251565e-16,0.0,feasible,1,3
+4,1,1.1,convex_symmetric,,1,1,8.903024167227148,True,,,optimal; first_pass=provided,,
+4,1,1.1,convex_nonsymmetric,,1,1;1;1;1,8.903024208975555,True,,,optimal,,
+4,1,1.1,fixed_rank_nonsymmetric,1,1,1;1;1;1,9.583325750008585,True,1.1102230246251565e-16,0.0,feasible,1,3
+4,1,1.1666666666666667,convex_symmetric,,1,1,8.523804191636208,True,,,optimal; first_pass=provided,,
+4,1,1.1666666666666667,convex_nonsymmetric,,1,1;1;1;1,8.523804216949335,True,,,optimal,,
+4,1,1.1666666666666667,fixed_rank_nonsymmetric,1,1,1;1;1;1,9.583325750008585,True,1.1102230246251565e-16,0.0,feasible,1,3
+4,1,1.3333333333333333,convex_symmetric,,1,1,7.770829473843205,True,,,optimal; first_pass=provided,,
+4,1,1.3333333333333333,convex_nonsymmetric,,1,1;1;1;1,7.770829516991521,True,,,optimal,,
+4,1,1.3333333333333333,fixed_rank_nonsymmetric,1,1,1;1;1;1,9.583325750008585,True,1.1102230246251565e-16,0.0,feasible,1,3
+4,1,1.5,convex_symmetric,,1,1,7.222219405506389,True,,,optimal; first_pass=provided,,
+4,1,1.5,convex_nonsymmetric,,1,1;1;1;1,7.222219502264741,True,,,optimal,,
+4,1,1.5,fixed_rank_nonsymmetric,1,1,1;1;1;1,9.583325750008585,True,1.1102230246251565e-16,0.0,feasible,1,3
+4,1,1.6666666666666665,convex_symmetric,,1,1,6.816664434280981,True,,,optimal; first_pass=provided,,
+4,1,1.6666666666666665,convex_nonsymmetric,,1,1;1;1;1,6.816664587541864,True,,,optimal,,
+4,1,1.6666666666666665,fixed_rank_nonsymmetric,1,1,1;1;1;1,9.583325750008585,True,1.1102230246251565e-16,0.0,feasible,1,3
+4,1,1.8333333333333333,convex_symmetric,,1,1,6.515149791177096,True,,,optimal; first_pass=provided,,
+4,1,1.8333333333333333,convex_nonsymmetric,,1,1;1;1;1,6.51515002117124,True,,,optimal,,
+4,1,1.8333333333333333,fixed_rank_nonsymmetric,1,1,1;1;1;1,9.583325750008585,True,1.1102230246251565e-16,0.0,feasible,1,3
+4,1,2.0,convex_symmetric,,1,1,6.291665424577504,True,,,optimal; first_pass=provided,,
+4,1,2.0,convex_nonsymmetric,,1,1;1;1;1,6.291665519719488,True,,,optimal,,
+4,1,2.0,fixed_rank_nonsymmetric,1,1,1;1;1;1,9.583325750008585,True,1.1102230246251565e-16,0.0,feasible,1,3
+4,2,1.0,convex_symmetric,,3,3,15.716279793471482,True,,,optimal; first_pass=provided,,
+4,2,1.0,convex_nonsymmetric,,3,3;3;3;3,15.716279756861892,True,,,optimal,,
+4,2,1.0,fixed_rank_nonsymmetric,1,,1;1;1;1,12.014003833771516,False,0.5009721465906509,0.0,not_found,2,1349
+4,2,1.0,fixed_rank_nonsymmetric,2,,2;2;2;2,18.439688484421964,False,0.027868964778709704,3.154283420458981e-06,not_found,3,4500
+4,2,1.0,fixed_rank_nonsymmetric,3,3,3;3;3;3,15.716279803539173,True,2.4202861936828413e-14,2.220446049250313e-16,feasible,1,11
+4,2,1.02,convex_symmetric,,3,3,15.602185566330254,True,,,optimal; first_pass=provided,,
+4,2,1.02,convex_nonsymmetric,,3,3;3;3;3,15.602185247510072,True,,,optimal,,
+4,2,1.02,fixed_rank_nonsymmetric,1,,1;1;1;1,17.17176759892868,False,0.7985085797102064,3.7310680336188895e-05,not_found,2,1605
+4,2,1.02,fixed_rank_nonsymmetric,2,,2;2;2;2,19.034433948113282,False,0.00970948305281405,1.0952077516002134e-06,not_found,3,4500
+4,2,1.02,fixed_rank_nonsymmetric,3,3,3;3;3;3,15.716279803539173,True,2.4202861936828413e-14,0.0,feasible,1,3
+4,2,1.04,convex_symmetric,,3,3,15.521353210384168,True,,,optimal; first_pass=provided,,
+4,2,1.04,convex_nonsymmetric,,3,3;3;3;3,15.521353198190987,True,,,optimal,,
+4,2,1.04,fixed_rank_nonsymmetric,1,,1;1;1;1,17.292143019594363,False,0.9837689478413139,3.386291178841816e-05,not_found,2,2609
+4,2,1.04,fixed_rank_nonsymmetric,2,2,2;2;2;2,18.254118055609382,True,4.3298697960381105e-15,1.0124567850766653e-11,feasible,2,1528
+4,2,1.04,fixed_rank_nonsymmetric,3,3,3;3;3;3,15.716279803539173,True,2.4202861936828413e-14,0.0,feasible,1,3
+4,2,1.06,convex_symmetric,,3,3,15.447732110676593,True,,,optimal; first_pass=provided,,
+4,2,1.06,convex_nonsymmetric,,3,3;3;3;3,15.44773210259476,True,,,optimal,,
+4,2,1.06,fixed_rank_nonsymmetric,1,,1;1;1;1,17.452447857183547,False,0.9448647840061447,3.586255276988304e-05,not_found,2,2831
+4,2,1.06,fixed_rank_nonsymmetric,2,2,2;2;2;2,18.254118055609382,True,4.3298697960381105e-15,0.0,feasible,1,3
+4,2,1.06,fixed_rank_nonsymmetric,3,3,3;3;3;3,15.716279803539173,True,2.4202861936828413e-14,0.0,feasible,1,3
+4,2,1.1,convex_symmetric,,3,3,15.32054672509285,True,,,optimal; first_pass=provided,,
+4,2,1.1,convex_nonsymmetric,,3,3;3;3;3,15.32054678753355,True,,,optimal,,
+4,2,1.1,fixed_rank_nonsymmetric,1,,1;1;1;1,13.694367049424473,False,0.500972576734072,0.0,not_found,2,1513
+4,2,1.1,fixed_rank_nonsymmetric,2,2,2;2;2;2,18.254118055609382,True,4.3298697960381105e-15,0.0,feasible,1,3
+4,2,1.1,fixed_rank_nonsymmetric,3,3,3;3;3;3,15.716279803539173,True,2.4202861936828413e-14,0.0,feasible,1,3
+4,2,1.105498860309242,convex_symmetric,,3,3,15.305029062286097,True,,,optimal; first_pass=provided,,
+4,2,1.105498860309242,convex_nonsymmetric,,3,3;3;3;3,15.305029100576267,True,,,optimal,,
+4,2,1.105498860309242,fixed_rank_nonsymmetric,1,,1;1;1;1,14.031749578088599,False,0.5009768486481192,6.331424273753328e-11,not_found,2,527
+4,2,1.105498860309242,fixed_rank_nonsymmetric,2,2,2;2;2;2,18.254118055609382,True,4.3298697960381105e-15,0.0,feasible,1,3
+4,2,1.105498860309242,fixed_rank_nonsymmetric,3,3,3;3;3;3,15.716279803539173,True,2.4202861936828413e-14,0.0,feasible,1,3
+4,2,1.210997720618484,convex_symmetric,,3,3,15.087853528507614,True,,,optimal; first_pass=provided,,
+4,2,1.210997720618484,convex_nonsymmetric,,3,3;3;3;3,15.087853560524705,True,,,optimal,,
+4,2,1.210997720618484,fixed_rank_nonsymmetric,1,,1;1;1;1,19.47868964433171,False,0.6966887565597283,3.300376363757351e-05,not_found,2,3000
+4,2,1.210997720618484,fixed_rank_nonsymmetric,2,2,2;2;2;2,18.254118055609382,True,4.3298697960381105e-15,0.0,feasible,1,3
+4,2,1.210997720618484,fixed_rank_nonsymmetric,3,3,3;3;3;3,15.716279803539173,True,2.4202861936828413e-14,0.0,feasible,1,3
+4,2,1.3164965809277263,convex_symmetric,,3,3,14.998516437433654,True,,,optimal; first_pass=provided,,
+4,2,1.3164965809277263,convex_nonsymmetric,,3,3;3;3;3,14.998516502084827,True,,,optimal,,
+4,2,1.3164965809277263,fixed_rank_nonsymmetric,1,,1;1;1;1,20.693971914758016,False,0.5588281254718748,2.703478122723091e-05,not_found,2,2144
+4,2,1.3164965809277263,fixed_rank_nonsymmetric,2,2,2;2;2;2,18.254118055609382,True,4.3298697960381105e-15,0.0,feasible,1,3
+4,2,1.3164965809277263,fixed_rank_nonsymmetric,3,3,3;3;3;3,15.716279803539173,True,2.4202861936828413e-14,0.0,feasible,1,3
+4,2,1.4219954412369682,convex_symmetric,,3,3,14.991856786310505,True,,,optimal; first_pass=provided,,
+4,2,1.4219954412369682,convex_nonsymmetric,,3,3;3;3;3,14.991856770532596,True,,,optimal,,
+4,2,1.4219954412369682,fixed_rank_nonsymmetric,1,,1;1;1;1,22.142566389184463,False,0.4890195173562417,2.3998274401915154e-05,not_found,2,1582
+4,2,1.4219954412369682,fixed_rank_nonsymmetric,2,2,2;2;2;2,18.254118055609382,True,4.3298697960381105e-15,0.0,feasible,1,3
+4,2,1.4219954412369682,fixed_rank_nonsymmetric,3,3,3;3;3;3,15.716279803539173,True,2.4202861936828413e-14,0.0,feasible,1,3
+4,2,1.5274943015462101,convex_symmetric,,3,3,14.991856692551815,True,,,optimal; first_pass=provided,,
+4,2,1.5274943015462101,convex_nonsymmetric,,3,3;3;3;3,14.991856787816818,True,,,optimal,,
+4,2,1.5274943015462101,fixed_rank_nonsymmetric,1,,1;1;1;1,23.199768277033765,False,0.38977221782695903,1.887899066965737e-05,not_found,2,2835
+4,2,1.5274943015462101,fixed_rank_nonsymmetric,2,2,2;2;2;2,18.254118055609382,True,4.3298697960381105e-15,0.0,feasible,1,3
+4,2,1.5274943015462101,fixed_rank_nonsymmetric,3,3,3;3;3;3,15.716279803539173,True,2.4202861936828413e-14,0.0,feasible,1,3
+4,2,1.6329931618554523,convex_symmetric,,3,3,14.991856768258396,True,,,optimal; first_pass=provided,,
+4,2,1.6329931618554523,convex_nonsymmetric,,3,3;3;3;3,14.99185679383624,True,,,optimal,,
+4,2,1.6329931618554523,fixed_rank_nonsymmetric,1,,1;1;1;1,24.45258242100928,False,0.30655687756054895,1.4814426124054592e-05,not_found,2,3000
+4,2,1.6329931618554523,fixed_rank_nonsymmetric,2,2,2;2;2;2,18.254118055609382,True,4.3298697960381105e-15,0.0,feasible,1,3
+4,2,1.6329931618554523,fixed_rank_nonsymmetric,3,3,3;3;3;3,15.716279803539173,True,2.4202861936828413e-14,0.0,feasible,1,3

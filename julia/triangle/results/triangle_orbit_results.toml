@@ -1,0 +1,89 @@
+[n6_q120]
+adversary_value = 3.5653283587156297
+best_adversary_value = 3.5653283587156297
+inputs = 262
+max_psd_block = 27
+n = 6
+pair_orbits = 20
+q = 120
+updated_at = "2026-07-13T00:43:42"
+useful_orbits = [1, 36, 62, 255, 32768]
+
+    [[n6_q120.history]]
+    accepted_rounds = 1
+    adversary_value = 2.2360679761622784
+    initial_value = 0.999999989652134
+    inputs = 22
+    max_psd_block = 5
+    pair_orbits = 2
+    relative_tolerance = 0.0
+    retained_orbits = 3
+    timestamp = "2026-07-13T00:43:27"
+    useful_orbits = [1, 36, 32768]
+    [[n6_q120.history]]
+    accepted_rounds = 2
+    adversary_value = 3.2222111959083297
+    initial_value = 0.999999989652134
+    inputs = 142
+    max_psd_block = 15
+    pair_orbits = 11
+    relative_tolerance = 0.0
+    retained_orbits = 4
+    timestamp = "2026-07-13T00:43:34"
+    useful_orbits = [1, 36, 255, 32768]
+    [[n6_q120.history]]
+    accepted_rounds = 3
+    adversary_value = 3.5653283587156297
+    initial_value = 0.999999989652134
+    inputs = 262
+    max_psd_block = 27
+    pair_orbits = 20
+    relative_tolerance = 0.0
+    retained_orbits = 5
+    timestamp = "2026-07-13T00:43:42"
+    useful_orbits = [1, 36, 62, 255, 32768]
+
+[n6_q180]
+adversary_value = 3.2706292107632473
+best_adversary_value = 3.2706292107632473
+inputs = 43
+max_psd_block = 10
+n = 6
+pair_orbits = 9
+q = 180
+updated_at = "2026-07-13T00:44:51"
+useful_orbits = [1, 32, 36, 511, 32768]
+
+    [[n6_q180.history]]
+    accepted_rounds = 1
+    adversary_value = 2.2360679761622784
+    initial_value = 0.999999989652134
+    inputs = 22
+    max_psd_block = 5
+    pair_orbits = 2
+    relative_tolerance = 0.0
+    retained_orbits = 3
+    timestamp = "2026-07-13T00:44:37"
+    useful_orbits = [1, 36, 32768]
+    [[n6_q180.history]]
+    accepted_rounds = 2
+    adversary_value = 3.110332979467571
+    initial_value = 0.999999989652134
+    inputs = 37
+    max_psd_block = 8
+    pair_orbits = 6
+    relative_tolerance = 0.0
+    retained_orbits = 4
+    timestamp = "2026-07-13T00:44:44"
+    useful_orbits = [1, 36, 511, 32768]
+    [[n6_q180.history]]
+    accepted_rounds = 3
+    adversary_value = 3.2706292107632473
+    initial_value = 0.999999989652134
+    inputs = 43
+    max_psd_block = 10
+    pair_orbits = 9
+    relative_tolerance = 0.0
+    retained_orbits = 5
+    timestamp = "2026-07-13T00:44:51"
+    useful_orbits = [1, 32, 36, 511, 32768]

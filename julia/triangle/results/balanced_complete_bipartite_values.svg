@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="480" viewBox="0 0 760 480">
+<rect width="100%" height="100%" fill="white"/>
+<text x="380.0" y="18" text-anchor="middle" font-family="sans-serif" font-size="16">Balanced complete bipartite promise</text>
+<line x1="70" y1="422" x2="736" y2="422" stroke="#111827"/>
+<line x1="70" y1="24" x2="70" y2="422" stroke="#111827"/>
+<circle cx="70.0" cy="256.6348230774699" r="4.5" fill="#2563eb"/>
+<text x="70.0" y="246.6348230774699" text-anchor="middle" font-family="sans-serif" font-size="11">2.0</text>
+<text x="70.0" y="440" text-anchor="middle" font-family="sans-serif" font-size="11">4</text>
+<circle cx="236.5" cy="177.37199949685444" r="4.5" fill="#2563eb"/>
+<text x="236.5" y="167.37199949685444" text-anchor="middle" font-family="sans-serif" font-size="11">2.959</text>
+<text x="236.5" y="440" text-anchor="middle" font-family="sans-serif" font-size="11">5</text>
+<circle cx="403.0" cy="149.74120634064633" r="4.5" fill="#2563eb"/>
+<text x="403.0" y="139.74120634064633" text-anchor="middle" font-family="sans-serif" font-size="11">3.293</text>
+<text x="403.0" y="440" text-anchor="middle" font-family="sans-serif" font-size="11">6</text>
+<circle cx="569.5" cy="82.54629127054497" r="4.5" fill="#2563eb"/>
+<text x="569.5" y="72.54629127054497" text-anchor="middle" font-family="sans-serif" font-size="11">4.106</text>
+<text x="569.5" y="440" text-anchor="middle" font-family="sans-serif" font-size="11">7</text>
+<circle cx="736.0" cy="53.481481481481524" r="4.5" fill="#2563eb"/>
+<text x="736.0" y="43.481481481481524" text-anchor="middle" font-family="sans-serif" font-size="11">4.457</text>
+<text x="736.0" y="440" text-anchor="middle" font-family="sans-serif" font-size="11">8</text>
+<polyline points="70.0,256.63 236.5,177.37 403.0,149.74 569.5,82.55 736.0,53.48" fill="none" stroke="#2563eb" stroke-width="2"/>
+<text x="380.0" y="464" text-anchor="middle" font-family="sans-serif" font-size="13">n</text>
+<text x="18" y="240.0" text-anchor="middle" font-family="sans-serif" font-size="13" transform="rotate(-90 18 240.0)">ADV value</text>
+</svg>

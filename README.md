@@ -1,70 +1,94 @@
-# query_complexity_clean
+# Query complexity
 
-A compact rewrite of the uploaded query-complexity codebase. It keeps only the
-space-efficient **phase-oracle one-vector transducer** path.
+Research code for quantum query complexity: adversary-bound SDPs,
+space-efficient phase-oracle transducers, symmetric-function query/space
+tradeoffs, and SymbolicWedderburn symmetry reduction for triangle finding
+and graph collision.
 
-## What is kept
+## Layout
 
-- `solve_phase_sdp(...)`: one-vector phase SDP for arbitrary Boolean domains.
-- `solve_symmetric_orbit_sdp(...)`: Terwilliger/orbit-reduced phase SDP for symmetric functions.
-- `solve_symmetric_phase_sdp(...)`: convenience wrapper that solves the orbit SDP and expands to the Boolean input basis.
-- `build_phase_transducer(...)`: extracts the input-independent transducer unitary `U`.
-- `run_phase_algorithm(...)`: simulates the repeated transducer algorithm.
-- `threshold_eta_blocks(...)`: analytic rank-one Schrijver blocks for `THRESHOLD^k_n`.
-- Optional `qiskit_phase_circuit(...)` for dense Qiskit simulation.
+| Path | Purpose |
+| --- | --- |
+| `query_complexity.py` | Python library and existing public import |
+| `examples/` | Small examples and Python API guide |
+| `experiments/` | Convex and fixed-rank query/space searches |
+| `plots/` | Plotting scripts for those searches |
+| `tests/` | Numerical regression checks |
+| `notebooks/` | Interactive visual examples |
+| `results/query_space/` | Existing CSV measurements and figures |
+| `julia/Project.toml`, `julia/Manifest.toml` | Reproducible triangle and benchmark environment |
+| `julia/triangle/` | SymbolicWedderburn solvers, runners, and detailed research notes |
+| `julia/triangle/results/` | Orbit stores, measurements, and figures |
+| `julia/benchmarks/` | SDPLRPlus threshold benchmark |
+| `julia/vendor/` | Local SDPLRPlus source and upstream license |
 
-## What was removed
+## Python setup and examples
 
-- direct-sum / bit-flip transducer code;
-- two-vector adversary SDP;
-- primal-only experiments;
-- polynomial-method experiments;
-- duplicate `main.py` scripts;
-- rescaled and triangle-specific variants.
+From the repository root:
 
-## Quick OR example
-
-```python
-import query_complexity as qc
-
-sol = qc.analytic_or_solution(3)
-td = qc.build_phase_transducer(sol)
-
-print("objective:", sol.objective_value)
-print("private dim:", td.private_dim)
-print("map error:", td.map_error)
-qc.show_catalysts(sol)
+```bash
+python -m pip install -e '.[experiments,dev]'
+python examples/example_or.py
+python examples/example_threshold_blocks.py
+python -m pytest -q
 ```
 
-## Symmetric SDP example
+Python 3.10 or later is required. NumPy, SciPy and CVXPY provide the core
+numerics; Matplotlib is used by experiment and plotting scripts. MOSEK and
+Qiskit are optional extras (`.[mosek]`, `.[qiskit]`). MOSEK requires a license.
+See [the Python API guide](examples/README.md) for mathematical conventions
+and transducer examples. The phase-normalized objective is `Adv±(f)/2`.
 
-```python
-import query_complexity as qc
+Experiments and plots interpret relative input/output paths from the current
+working directory. To reproduce the existing figures and keep new output
+beside the archived measurements, run them from `results/query_space` after
+the editable installation:
 
-n, k = 4, 2
-sol = qc.solve_symmetric_phase_sdp(
-    n,
-    qc.THRESHOLD_layers(n, k),
-    solver="MOSEK",          # or omit to use an installed default
-    epsilon=1e-5,
-    psd_tol=1e-5,
-)
-
-td = qc.build_phase_transducer(sol)
-print("objective:", sol.objective_value)
-print("rank dims:", sol.witness_dims)
-print("private dim:", td.private_dim)
+```bash
+cd results/query_space
+python ../../experiments/experiment_threshold_tradeoff.py --n 4 --ks 1,2 --points 3
+python ../../plots/plot_alpha_min_rank_curves.py
 ```
 
-## Analytic threshold block example
+Fixed-rank feasibility searches are nonconvex: a verified candidate certifies
+feasibility, while failure to find one does not certify infeasibility.
 
-```python
-import query_complexity as qc
+## Julia: triangle finding with SymbolicWedderburn
 
-blocks = qc.threshold_eta_blocks(4, 2)
-for r, data in blocks.items():
-    print("r =", r)
-    print("labels =", data["labels"])
-    print("eta =", data["eta"])
-    print("B rank =", 1 if data["eta"].any() else 0)
+The triangle code forms invariant SDPs under vertex relabelings and uses
+SymbolicWedderburn to decompose PSD constraints into smaller blocks. It
+includes the restricted adversary dual, primal/orbit searches, completely
+bounded degree SDP, and the related graph-collision experiments.
+
+From the repository root:
+
+```bash
+julia --project=julia -e 'using Pkg; Pkg.instantiate()'
+julia --project=julia julia/test/runtests.jl
+julia --project=julia julia/triangle/run_triangle_symmetric.jl 3 1
+julia --project=julia julia/triangle/triangle_cb_degree_sdp.jl 3 2 0.3333333333333333 clarabel
+julia --project=julia julia/triangle/graph_collision_adversary_dual.jl star 4 clarabel
+julia --project=julia julia/benchmarks/benchmark_sdplrplus.jl
 ```
+
+The manifest was generated with Julia 1.12.5; use that version to reproduce
+it. SymbolicWedderburn 0.4.4 is pinned as a registered dependency. The local
+SDPLRPlus version is included because the original environment depended on
+a modified checkout via an absolute path. The environment now references
+`vendor/SDPLRPlus` relative to `julia/`. MOSEK is the default for many runners;
+use Clarabel for the small license-free examples above where supported.
+
+See [triangle commands and research notes](julia/triangle/README.md) for
+orbit selection, pruning, greedy search, and stored results. Most Julia
+runners locate default stores and outputs in `julia/triangle/results`
+independently of the working directory. For triangle Python plots, run from
+that results directory using `python ../plot_NAME.py`; scripts that resolve
+their own directory also target `results/`.
+
+## Provenance
+
+This organization preserves the existing local Python implementation,
+experiments, notebook, and results. Triangle sources and results were copied
+from the sibling `triangle_adversary_sdp` project; that checkout remains
+untouched. See [Julia provenance](julia/PROVENANCE.md) for dependency details.
+Generated caches, build output, and package metadata are ignored.

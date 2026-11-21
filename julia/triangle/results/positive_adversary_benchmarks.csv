@@ -1,0 +1,7 @@
+family,n,value,status,orbits,inputs,pair_orbits,pair_members,maxblock
+balanced max-t surgery,4,2.23606822789509,OPTIMAL,6,35,19,304,15
+complete bipartite,4,2.6647742270890964,OPTIMAL,7,27,14,152,13
+balanced max-t surgery,5,3.5051895053069053,OPTIMAL,7,124,34,2323,22
+complete bipartite,5,3.4128436513267206,OPTIMAL,7,87,27,1136,20
+balanced max-t surgery,6,4.483716948580111,OPTIMAL,9,1332,346,217931,97
+complete bipartite,6,4.092374731905396,OPTIMAL,10,258,50,7232,29

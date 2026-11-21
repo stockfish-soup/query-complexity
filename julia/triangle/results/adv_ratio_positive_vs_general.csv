@@ -1,0 +1,16 @@
+family,x,ratio
+balanced max-t surgery,4,0.9999998936090077
+balanced max-t surgery,5,1.06728323887635
+balanced max-t surgery,6,1.1031507771258282
+complete bipartite,4,1.0485657552505954
+complete bipartite,5,1.073475193795004
+complete bipartite,6,1.0892076830717377
+complete bipartite (requested),6,1.0892075726834445
+complete bipartite (requested),7,1.084547467346913
+max-t surgery no base (requested),6,1.1124739518452367
+n=5 greedy round,1,1.0318965224448606
+n=5 greedy round,2,1.0848334949542784
+n=5 greedy round,3,1.0420136774545579
+n=5 greedy round,4,1.0541836926968786
+n=5 greedy round,5,1.0651280297389214
+n=5 greedy round,6,1.064566179152258

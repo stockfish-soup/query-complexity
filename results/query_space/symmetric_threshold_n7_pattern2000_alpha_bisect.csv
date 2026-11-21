@@ -1,0 +1,4 @@
+kind,n,k,target_rank,alpha,lo,hi,pattern,multiplicities,rank_bound,actual_block_ranks,actual_rank,feasible,max_equality_residual,max_block_residual,max_cap_violation,attempts,total_nfev
+threshold,7,2,2,10.0,,,2;0;0;0,1;5;9;5,2,2;0;0;0,,False,0.055358234973829745,0.12350127212879303,0.0,2,149
+threshold,7,3,2,10.0,,,2;0;0;0,1;5;9;5,2,2;0;0;0,,False,0.1004692894736221,0.16292089567343981,0.0,2,158
+threshold,7,4,2,10.0,,,2;0;0;0,1;5;9;5,2,2;0;0;0,,False,0.1276858705695164,0.17635513415414705,0.0,2,183

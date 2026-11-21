@@ -1,0 +1,13 @@
+[deps]
+COSMO = "1e616198-aa4e-51ec-90a2-23f7fbd31d8d"
+Clarabel = "61c947e1-3e6d-4ee4-985a-eec8c727bd6e"
+JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
+LowRankOpt = "607ca3ad-272e-43c8-bcbe-fc71b56c935c"
+MosekTools = "1ec41992-ff65-5c91-ac43-2df89e9693a4"
+PermutationGroups = "8bc5a954-2dfc-11e9-10e6-cd969bffa420"
+SCS = "c946c3f1-0d1f-5ce8-9dea-7daa1f7e2d13"
+SDPLRPlus = "9040bce9-cc75-4a86-9224-0257f72befc6"
+SymbolicWedderburn = "858aa9a9-4c7c-4c62-b466-2421203962a2"
+
+[compat]
+julia = "1.9"
