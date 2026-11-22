@@ -1,7 +1,7 @@
 # Level-2 triangle finding, requested sweep through n=10
 
 ```bash
-PYTHONPATH=. python experiments/experiment_triangle_level2_scaling.py
+python experiments/experiment_triangle_level2_scaling.py
 ```
 
 This is a resource-checked sweep, **not eight completed SDP solves**. It

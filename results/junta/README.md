@@ -9,7 +9,7 @@ python experiments/experiment_majority_junta.py
 `majority_comparison.csv` compares the explicit period-four rank-one witness
 with numerical solutions of the unrestricted count-space PSD ansatz.
 Costs use the learning-adversary normalization documented in
-[the junta guide](../../junta_learning/README.md).
+[the junta guide](../../docs/guides/junta-learning.md).
 
 - `rank_one_cost` is evaluated from the exact rational squared-cost formula.
 - `rank_one_residual` checks all count-kernel equalities with floating arithmetic.

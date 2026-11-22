@@ -1,0 +1,12 @@
+include LICENSE README.md CHANGELOG.md CONTRIBUTING.md
+recursive-include src *.py
+recursive-include docs *.md *.tex
+recursive-include examples *.py
+recursive-include tests *.py
+recursive-include experiments *.py *.jl
+recursive-include plots *.py
+recursive-include results *.md *.json *.csv *.png *.svg
+recursive-include julia *.jl *.toml *.md *.py *.csv *.png *.svg LICENSE
+include majority_rank_one_closed_X.pdf
+recursive-include notebooks *.ipynb
+global-exclude __pycache__ *.py[cod] .DS_Store

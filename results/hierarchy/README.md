@@ -23,7 +23,7 @@ dense SDPs. The tests additionally compare one terminal problem with a fully
 unreduced SDP, and verify that the earlier unbiased majority witness lies
 in level 0 of the finite-universe learning hierarchy.
 
-See [the definition and ordering conventions](../../sdp_hierarchy/README.md).
+See [the definition and ordering conventions](../../docs/guides/irrep-hierarchy.md).
 Each level r includes r+1 present types, starting with the trivial query
 stabilizer representation. The backend enumerates finite group actions;
 these results make no scalability claim for large symmetric groups.

@@ -116,7 +116,7 @@ python -m junta_learning.bounded_size --ks 3 5 --odd-only --details
 The global PSD dimension is `sum_{r=1}^k (r+1)`; use small cutoffs for numerical
 optimization. These finite solves benchmark the bounded-size ansatz. The
 analytic `O(log k)` construction and even-to-odd reduction are explained in
-[the bounded-size notes](../docs/junta/bounded_size_log_cost.md); numerical
+[the bounded-size notes](../junta/bounded_size_log_cost.md); numerical
 fits alone do not establish that theorem.
 
 ## General symmetric juntas and multiple biases
@@ -139,7 +139,7 @@ python -m junta_learning.multibias exact-half --k 12
 python -m junta_learning.multibias belovs-or --k 12
 ```
 
-See [multi-bias derivation and commands](../docs/junta/multibias.md).
+See [multi-bias derivation and commands](../junta/multibias.md).
 The exchange routine's continuum envelope is scanned and locally refined;
 its reported continuum bracket is numerical, not a rigorous global certificate.
 
@@ -159,9 +159,9 @@ feasible cost, not a claim of global rank-one optimality.
 
 ## Proof notes and provenance
 
-- [Which optimization produced the rank-one witness?](../docs/junta/majority_rank_one_optimization_origin.tex)
-- [Direct rank-one construction and logarithmic bound](../docs/junta/majority_rank_one_non_h.tex)
-- [Existing closed-form majority PDF](../majority_rank_one_closed_X.pdf)
+- [Which optimization produced the rank-one witness?](../junta/majority_rank_one_optimization_origin.tex)
+- [Direct rank-one construction and logarithmic bound](../junta/majority_rank_one_non_h.tex)
+- [Existing closed-form majority PDF](../../majority_rank_one_closed_X.pdf)
 
 Imported from the workspace's `proof/latex/majority` (direct count SDP,
 rank-one search/comparison, numerical audit), `proof/latex/at_most_k`
