@@ -40,3 +40,21 @@ def symmetric_junta(n, k, profile):
     answers = np.array([[profile[(A & S).bit_count()] for S in queries] for A in concepts])
     generators = [([indices[_move(A,p)] for A in concepts], [_move(S,p) for S in queries]) for p in _generators(n)]
     return OracleProblem(answers, generators)
+
+
+def triangle_finding(n):
+    """Evaluate triangle existence with edge-bit queries and vertex S_n action."""
+    if n < 3:
+        raise ValueError('Triangle finding requires at least three vertices')
+    edges = list(itertools.combinations(range(n), 2))
+    index = {edge:i for i,edge in enumerate(edges)}
+    masks = [sum(1 << index[e] for e in itertools.combinations(vertices,2))
+             for vertices in itertools.combinations(range(n),3)]
+    inputs = range(1 << len(edges))
+    answers = np.array([[(x >> i) & 1 for i in range(len(edges))] for x in inputs])
+    targets = [int(any(x & mask == mask for mask in masks)) for x in inputs]
+    generators = []
+    for p in _generators(n):
+        edge_action = [index[tuple(sorted((p[a],p[b])))] for a,b in edges]
+        generators.append(([_move(x,edge_action) for x in inputs],edge_action))
+    return OracleProblem(answers,generators,targets)

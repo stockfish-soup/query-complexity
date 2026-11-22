@@ -1,0 +1,294 @@
+[
+  {
+    "vertices": 3,
+    "inputs": 8,
+    "queries": 3,
+    "group_order": 6,
+    "blocks": [
+      {
+        "query": 0,
+        "orbit_size": 3,
+        "sectors": [
+          {
+            "index": 0,
+            "degree": 1,
+            "multiplicity": 6,
+            "label": [
+              [
+                1.0,
+                0.0
+              ],
+              [
+                1.0,
+                0.0
+              ]
+            ]
+          },
+          {
+            "index": 1,
+            "degree": 1,
+            "multiplicity": 2,
+            "label": [
+              [
+                1.0,
+                0.0
+              ],
+              [
+                -1.0,
+                0.0
+              ]
+            ]
+          }
+        ]
+      }
+    ],
+    "levels": [
+      {
+        "level": 0,
+        "solver": "CLARABEL",
+        "status": "optimal",
+        "cost": 1.7320507991400802,
+        "block_sizes": [
+          6
+        ],
+        "equality_residual": 2.220446049250313e-16,
+        "minimum_eigenvalue": -2.8071498482818347e-09,
+        "maximum_load": 1.732050803537411,
+        "support_leakage": 6.753223014464259e-16,
+        "covariance_residual": 0.0,
+        "numerically_feasible": true
+      },
+      {
+        "level": 1,
+        "solver": "CLARABEL",
+        "status": "optimal",
+        "cost": 1.7320507787796033,
+        "block_sizes": [
+          6,
+          2
+        ],
+        "equality_residual": 2.220446049250313e-16,
+        "minimum_eigenvalue": -7.684040416051298e-09,
+        "maximum_load": 1.7320507916571526,
+        "support_leakage": 6.753223014464259e-16,
+        "covariance_residual": 0.0,
+        "numerically_feasible": true
+      }
+    ],
+    "intersection_free": {
+      "level": 0,
+      "solver": "CLARABEL",
+      "status": "optimal",
+      "cost": 1.7320507991390834,
+      "block_sizes": [
+        6
+      ],
+      "equality_residual": 2.220446049250313e-16,
+      "minimum_eigenvalue": -2.806799457849314e-09,
+      "maximum_load": 1.7320508035358264,
+      "support_leakage": 6.753223014464259e-16,
+      "covariance_residual": 0.0,
+      "numerically_feasible": true
+    },
+    "dense": {
+      "level": 0,
+      "solver": "CLARABEL",
+      "status": "optimal",
+      "cost": 1.7320508065723488,
+      "block_sizes": [],
+      "equality_residual": 0.0,
+      "minimum_eigenvalue": -3.6925329831795134e-10,
+      "maximum_load": 1.732050807210578,
+      "support_leakage": null,
+      "covariance_residual": 5.629678671615694e-15,
+      "numerically_feasible": true
+    }
+  },
+  {
+    "vertices": 4,
+    "inputs": 64,
+    "queries": 6,
+    "group_order": 24,
+    "blocks": [
+      {
+        "query": 0,
+        "orbit_size": 6,
+        "sectors": [
+          {
+            "index": 0,
+            "degree": 1,
+            "multiplicity": 28,
+            "label": [
+              [
+                1.0,
+                0.0
+              ],
+              [
+                1.0,
+                0.0
+              ],
+              [
+                1.0,
+                0.0
+              ],
+              [
+                1.0,
+                0.0
+              ]
+            ]
+          },
+          {
+            "index": 1,
+            "degree": 1,
+            "multiplicity": 12,
+            "label": [
+              [
+                1.0,
+                0.0
+              ],
+              [
+                -1.0,
+                0.0
+              ],
+              [
+                -1.0,
+                0.0
+              ],
+              [
+                1.0,
+                0.0
+              ]
+            ]
+          },
+          {
+            "index": 2,
+            "degree": 1,
+            "multiplicity": 12,
+            "label": [
+              [
+                1.0,
+                0.0
+              ],
+              [
+                -1.0,
+                0.0
+              ],
+              [
+                1.0,
+                0.0
+              ],
+              [
+                -1.0,
+                0.0
+              ]
+            ]
+          },
+          {
+            "index": 3,
+            "degree": 1,
+            "multiplicity": 12,
+            "label": [
+              [
+                1.0,
+                0.0
+              ],
+              [
+                1.0,
+                0.0
+              ],
+              [
+                -1.0,
+                0.0
+              ],
+              [
+                -1.0,
+                0.0
+              ]
+            ]
+          }
+        ]
+      }
+    ],
+    "levels": [
+      {
+        "level": 0,
+        "solver": "CLARABEL",
+        "status": "infeasible",
+        "cost": null,
+        "block_sizes": [
+          28
+        ],
+        "numerically_feasible": false
+      },
+      {
+        "level": 1,
+        "solver": "CLARABEL",
+        "status": "infeasible",
+        "cost": null,
+        "block_sizes": [
+          28,
+          12
+        ],
+        "numerically_feasible": false
+      },
+      {
+        "level": 2,
+        "solver": "CLARABEL",
+        "status": "optimal_inaccurate",
+        "cost": 2.999999635120582,
+        "block_sizes": [
+          28,
+          12,
+          12
+        ],
+        "equality_residual": 6.661338147750939e-16,
+        "minimum_eigenvalue": -8.586436220553981e-08,
+        "maximum_load": 2.9999996532100344,
+        "support_leakage": 1.2945594393290106e-14,
+        "covariance_residual": 0.0,
+        "numerically_feasible": true
+      },
+      {
+        "level": 3,
+        "solver": "SCS",
+        "status": "optimal",
+        "cost": 2.999999977909654,
+        "block_sizes": [
+          28,
+          12,
+          12,
+          12
+        ],
+        "equality_residual": 1.5476508963274682e-13,
+        "minimum_eigenvalue": -3.584461392816271e-09,
+        "maximum_load": 2.9999999786041376,
+        "support_leakage": 1.423703224538492e-14,
+        "covariance_residual": 0.0,
+        "numerically_feasible": true
+      }
+    ],
+    "intersection_free": {
+      "level": 0,
+      "solver": "CLARABEL",
+      "status": "infeasible",
+      "cost": null,
+      "block_sizes": [
+        28
+      ],
+      "numerically_feasible": false
+    },
+    "dense": {
+      "level": 0,
+      "solver": "CLARABEL",
+      "status": "optimal_inaccurate",
+      "cost": 2.9999991558750483,
+      "block_sizes": [],
+      "equality_residual": 5.551115123125783e-16,
+      "minimum_eigenvalue": -1.4077024416071973e-07,
+      "maximum_load": 2.9999992100872266,
+      "support_leakage": null,
+      "covariance_residual": 1.887379141862766e-15,
+      "numerically_feasible": true
+    }
+  }
+]
