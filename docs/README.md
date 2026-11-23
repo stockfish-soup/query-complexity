@@ -32,7 +32,7 @@ state mathematical conventions, assumptions, and numerical limitations.
 | `notebooks/` | Interactive research examples |
 
 Python runtime packages contain no archived plots or solver transcripts.
-The wheel is the Python runtime distribution. The source archive also
+The wheel installs Python runtime packages plus the exportable research bundle. The source archive also
 contains guides, examples, tests, experiments, recorded data and Julia
 sources. Use a Git checkout for development; source archives have no Git
 history. The Julia environment requires Julia and its own dependencies.
@@ -55,3 +55,12 @@ run from `results/query_space` as described in the query-complexity guide.
 
 See [contributing](../CONTRIBUTING.md), [release procedure](releasing.md),
 and [changes in 0.2.0](../CHANGELOG.md).
+
+## Export all documentation and research assets
+
+```bash
+python -m query_complexity_resources export query-complexity-workspace
+```
+
+The installed wheel includes the documentation, examples, tests, experiments,
+results, notebooks and Julia sources. See [the complete workspace guide](research-workspace.md) for workflows, solver setup and limitations.

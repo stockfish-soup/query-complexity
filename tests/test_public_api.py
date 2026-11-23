@@ -6,7 +6,7 @@ from sdp_hierarchy import Hierarchy, OracleProblem, triangle_finding
 
 
 def test_existing_transducer_imports_remain_available():
-    assert qc.__version__ == '0.2.0'
+    assert qc.__version__ == '0.2.1'
     assert qc.AdversarySolution is core.AdversarySolution
     solution = qc.analytic_or_solution(2)
     transducer = qc.build_adversary_transducer(solution)

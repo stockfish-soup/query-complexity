@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.1
+
+- Set the distribution author to Aleksandrs Krivcenko.
+- Bundle documentation, examples, tests, experiments, data, notebooks and Julia
+  sources in the installed wheel as checksum-verified exportable resources.
+- Add a research workspace export command and comprehensive workflow guide.
+
+
 ## 0.2.0
 
 - Preserve the `query_complexity` API in a standard `src/` package layout.

@@ -10,3 +10,4 @@ recursive-include julia *.jl *.toml *.md *.py *.csv *.png *.svg LICENSE
 include majority_rank_one_closed_X.pdf
 recursive-include notebooks *.ipynb
 global-exclude __pycache__ *.py[cod] .DS_Store
+include src/build_support.py

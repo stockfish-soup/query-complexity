@@ -4,12 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "query-complexity"
-version = "0.2.0"
+version = "0.2.1"
 description = "Quantum query complexity: adversary SDPs, junta learning, irrep hierarchies, and transducers"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {file = "LICENSE"}
-authors = [{name = "Ke Li"}]
+authors = [{name = "Aleksandrs Krivcenko"}]
 keywords = ["quantum", "query complexity", "semidefinite programming", "junta learning", "representation theory"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -46,3 +46,6 @@ include = ["query_complexity*", "junta_learning*", "sdp_hierarchy*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+
+[tool.setuptools.cmdclass]
+build_py = "build_support.BuildPy"

@@ -60,3 +60,12 @@ Check solver status, residuals, PSD eigenvalues and scale. An
 Fixed-rank searches are nonconvex; failure does not prove infeasibility.
 The hierarchy's `numerically_feasible` flag uses floating tolerances.
 Full graph enumeration grows exponentially and is limited to small sizes.
+
+## Export all documentation and research assets
+
+```bash
+python -m query_complexity_resources export query-complexity-workspace
+```
+
+The installed wheel includes the documentation, examples, tests, experiments,
+results, notebooks and Julia sources. See [the complete workspace guide](research-workspace.md) for workflows, solver setup and limitations.

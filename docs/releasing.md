@@ -1,7 +1,7 @@
 # Releasing to PyPI
 
 The distribution name is `query-complexity`. It installs `query_complexity`,
-`junta_learning` and `sdp_hierarchy`. Version 0.2.0 restores the earlier
+`junta_learning` and `sdp_hierarchy`. Version 0.2.0 restored the earlier
 package's `query_complexity.core` layout and expands the distribution.
 
 1. Update `project.version` in `pyproject.toml` and `__version__` in
@@ -14,8 +14,8 @@ package's `query_complexity.core` layout and expands the distribution.
    python -m twine check /tmp/query-complexity-release/*
    ```
 
-4. Inspect the wheel and source archive. Runtime packages belong in the wheel;
-   research assets and Julia sources belong in the source archive.
+4. Inspect the wheel and source archive. Runtime packages and the generated research bundle belong in the wheel;
+   the buildable sources also belong in the source archive.
 5. Upload the exact validated files:
 
    ```bash

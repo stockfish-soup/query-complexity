@@ -112,10 +112,10 @@ python examples/triangle_hierarchy.py --vertices 4
 python -m pytest -q
 ```
 
-The wheel installs three import packages: `query_complexity`,
+The wheel installs three numerical import packages: `query_complexity`,
 `junta_learning`, and `sdp_hierarchy`. Experiments, archives, notebooks and
-Julia tools are kept in the repository and source distribution, outside
-the runtime packages. See the documentation index for the repository map.
+Julia tools are bundled as exportable resources alongside the numerical
+packages and included in the source distribution. See the documentation index for the repository map.
 
 ## Julia solvers
 
@@ -135,3 +135,12 @@ and [dependency provenance](https://github.com/stockfish-soup/query-complexity/b
 
 MIT. Vendored SDPLRPlus retains its upstream license in
 `julia/vendor/SDPLRPlus/LICENSE`.
+
+## Export all documentation and research assets
+
+```bash
+python -m query_complexity_resources export query-complexity-workspace
+```
+
+The installed wheel includes the documentation, examples, tests, experiments,
+results, notebooks and Julia sources. See [the complete workspace guide](https://github.com/stockfish-soup/query-complexity/blob/main/docs/research-workspace.md) for workflows, solver setup and limitations.
